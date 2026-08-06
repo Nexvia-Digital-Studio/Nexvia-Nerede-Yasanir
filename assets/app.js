@@ -191,7 +191,7 @@ window.appCopyLink = function(cityName){
 const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
-const map = L.map('map',{zoomControl:true, minZoom:5, maxZoom:14, worldCopyJump:false}).setView([39.0,35.5], 6);
+const map = L.map('map',{zoomControl:true, minZoom:5, maxZoom:14, worldCopyJump:false, attributionControl:false}).setView([39.0,35.5], 6);
 const tileLayer = L.tileLayer(currentTheme==='light'? lightTileUrl : darkTileUrl, {
   attribution:'© OpenStreetMap © Carto', subdomains:'abcd', maxZoom:19
 }).addTo(map);

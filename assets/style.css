@@ -585,3 +585,5 @@ body.light-theme .ic-moon{display:none;}
   .map-compare-banner{left:14px; top:64px;}
   .pop{min-width:280px; max-width:320px;}
 }
+
+.leaflet-control-attribution { display: none !important; }
