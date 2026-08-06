@@ -1104,8 +1104,15 @@ function setTriVal(key, optIdx){
 function wirePresets(){
   document.querySelectorAll('.chip-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{
-      const p = btn.dataset.preset;
+      const isAlreadyActive = btn.classList.contains('active');
       document.querySelectorAll('.chip-btn').forEach(x=>x.classList.remove('active'));
+
+      if(isAlreadyActive){
+        // Tekrar tıklandığında hazır filtreyi iptal et!
+        document.getElementById('btnReset')?.click();
+        return;
+      }
+
       btn.classList.add('active');
 
       FILTERS.forEach(g=>g.items.forEach(f=>{
@@ -1113,6 +1120,7 @@ function wirePresets(){
         else if(f.type==='tri') setTriVal(f.key, 0);
       }));
 
+      const p = btn.dataset.preset;
       if(p === 'sea_summer'){
         setTriVal('deniz', 1);
         setRangeVal('denizMesafe', 0, 15);
