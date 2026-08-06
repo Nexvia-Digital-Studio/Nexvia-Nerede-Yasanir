@@ -9,9 +9,11 @@ require __DIR__ . '/lib/icons.php';
 <title>Yaşam Haritası — Türkiye'de Nerede Yaşarım?</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Canvas Konfeti efekti -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 <link rel="stylesheet" href="assets/style.css?v=<?= time() ?>"/>
 
-<!-- Google AdSense Yayıncı Kodu (ca-pub ID'nizi buraya yapıştırın) -->
+<!-- Google AdSense Yayıncı Kodu -->
 <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
 </head>
 <body>
@@ -42,6 +44,13 @@ require __DIR__ . '/lib/icons.php';
         <div id="searchResults" class="search-results"></div>
       </div>
 
+      <!-- Eğlenceli İnteraktif Aksiyon Butonları -->
+      <div class="interactive-bar">
+        <button class="action-btn quiz-btn" id="btnStartQuiz">🔮 Ruh Şehrini Bul</button>
+        <button class="action-btn surprise-btn" id="btnSurprise">🎲 Beni Şaşırt!</button>
+        <button class="action-btn fav-btn" id="btnShowFavs">❤️ Favoriler (<span id="favCount">0</span>)</button>
+      </div>
+
       <!-- Hazır Yaşam Tarzı Filtreleri -->
       <div class="preset-chips">
         <span class="preset-title">Hızlı Filtreler:</span>
@@ -65,6 +74,7 @@ require __DIR__ . '/lib/icons.php';
     <div class="sb-actions">
       <button class="btn" id="btnReset"><?= icon('rotate', 15) ?> Sıfırla</button>
       <button class="btn active" id="btnStrict"><?= icon('check', 15) ?> Sadece uygun</button>
+      <button class="btn" id="btnCompare"><?= icon('activity', 15) ?> Karşılaştır</button>
     </div>
     
     <div class="filters" id="filters">
@@ -98,7 +108,7 @@ require __DIR__ . '/lib/icons.php';
   <!-- Harita Üstü Reklam Şeridi (Google AdSense Slot #2) -->
   <div class="map-top-ad">
     <span class="ad-label">Sponsorlu</span>
-    <!-- AdSense Kodu Slot #2 (728x90 Banner) -->
+    <!-- AdSense Kodu Slot #2 -->
     <!--
     <ins class="adsbygoogle"
          style="display:inline-block;width:728px;height:90px"
@@ -131,7 +141,53 @@ require __DIR__ . '/lib/icons.php';
   </div>
 </div>
 
-<!-- Ben Kimim & Gönüllü Proje Modalı (Batuhan Akcan) -->
+<!-- ============================================================
+   MODALLAR
+   ============================================================ -->
+
+<!-- 🔮 RUH ŞEHRİNİ BUL QUIZ MODALI -->
+<div class="about-backdrop" id="quizModal">
+  <div class="about-card quiz-card">
+    <button class="about-close" id="quizClose">&times;</button>
+    <div class="quiz-step" id="quizStepContainer">
+      <!-- Dinamik Quiz Soruları js ile doldurulacak -->
+    </div>
+  </div>
+</div>
+
+<!-- ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI -->
+<div class="about-backdrop" id="compareModal">
+  <div class="about-card compare-card">
+    <button class="about-close" id="compareClose">&times;</button>
+    <h2>⚖️ Şehir Karşılaştırma</h2>
+    <p class="sub">İki şehir veya ilçe seçerek değerlerini yan yana kıyaslayın.</p>
+    <div class="compare-selectors">
+      <select id="compSelect1" class="comp-select"><option value="">1. Şehri Seçin...</option></select>
+      <span class="vs-badge">VS</span>
+      <select id="compSelect2" class="comp-select"><option value="">2. Şehri Seçin...</option></select>
+    </div>
+    <div id="compareTableContainer" class="compare-table-wrap">
+      <div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin</div>
+    </div>
+  </div>
+</div>
+
+<!-- 📸 INSTAGRAM STORY GÖRSEL PAYLAŞIM MODALI -->
+<div class="about-backdrop" id="shareModal">
+  <div class="about-card share-card">
+    <button class="about-close" id="shareClose">&times;</button>
+    <h2>📸 Hikayede Paylaş</h2>
+    <p class="sub">Ruh şehrini veya uyum skorunu Instagram Story formatında indir ve paylaş!</p>
+    <div class="canvas-preview-wrap">
+      <canvas id="shareCanvas" width="540" height="960"></canvas>
+    </div>
+    <button class="social-btn insta" id="btnDownloadStory">
+      📥 Görseli İndir (Instagram Story)
+    </button>
+  </div>
+</div>
+
+<!-- 👨‍💻 BATUHAN AKCAN HAKKINDA MODALI -->
 <div class="about-backdrop" id="aboutBackdrop">
   <div class="about-card">
     <button class="about-close" id="aboutClose">&times;</button>
@@ -153,7 +209,7 @@ require __DIR__ . '/lib/icons.php';
   </div>
 </div>
 
-<!-- Kapatılabilir Pop-up Reklam Modalı (AdSense Interstitial Slot #4) -->
+<!-- 📢 KAPATILABİLİR POP-UP (INTERSTITIAL) REKLAM MODALI -->
 <div class="ad-modal-backdrop" id="adModalBackdrop">
   <div class="ad-modal-card">
     <div class="ad-modal-header">

@@ -1,12 +1,13 @@
 /* ============================================================
-   Yaşam Haritası — frontend mantığı (Interstitial Pop-up Reklamlı)
+   Yaşam Haritası — frontend mantığı
+   (Quiz, Beni Şaşırt, Instagram Hikaye Kartı, Karşılaştırma, Favoriler)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
 // SVG ikonlar
 const SVG = {
   'map-pin':'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
-  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4 10z"/>',
+  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/>',
   'waves':'<path d="M2 6c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
   'mountain':'<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
   'ruler':'<path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0L2.7 16.7a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/>',
@@ -78,7 +79,7 @@ const FILTERS = [
 ];
 
 /* ============================================================
-   STATE & TEMA MANTIĞI
+   STATE & FAVORİLER & TEMA MANTIĞI
    ============================================================ */
 let RAW = {iller:[], ilceler:[], meta:{}};
 let state = {};
@@ -86,6 +87,23 @@ let strictMode = true;
 let layerMode = 'auto';     // 'auto' | 'il' | 'ilce'
 let labelMode = localStorage.getItem('yh_label') || 'full'; // 'full' | 'compact'
 let currentTheme = localStorage.getItem('yh_theme') || 'dark';
+
+let favorites = new Set(JSON.parse(localStorage.getItem('yh_favs') || '[]'));
+
+function saveFavs(){
+  localStorage.setItem('yh_favs', JSON.stringify([...favorites]));
+  const countEl = document.getElementById('favCount');
+  if(countEl) countEl.textContent = favorites.size;
+}
+saveFavs();
+
+function toggleFav(id, type){
+  const key = `${type}_${id}`;
+  if(favorites.has(key)) favorites.delete(key);
+  else favorites.add(key);
+  saveFavs();
+  update();
+}
 
 const markersIl = {};     // id → marker
 const markersIlce = {};   // id → marker
@@ -128,49 +146,410 @@ document.getElementById('btnToggleNames').addEventListener('click', ()=>{
    BEN KİMİM & GÖNÜLLÜ PROJE MODALI (BATUHAN AKCAN)
    ============================================================ */
 const aboutBackdrop = document.getElementById('aboutBackdrop');
-function openAboutModal(){
-  if(aboutBackdrop) aboutBackdrop.classList.add('show');
-}
-function closeAboutModal(){
-  if(aboutBackdrop) aboutBackdrop.classList.remove('show');
-}
+function openAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.add('show'); }
+function closeAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.remove('show'); }
 ['btnAbout', 'triggerAbout', 'footerAbout'].forEach(id=>{
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('click', openAboutModal);
+  document.getElementById(id)?.addEventListener('click', openAboutModal);
 });
 document.getElementById('aboutClose')?.addEventListener('click', closeAboutModal);
-aboutBackdrop?.addEventListener('click', (e)=>{
-  if(e.target === aboutBackdrop) closeAboutModal();
-});
+aboutBackdrop?.addEventListener('click', (e)=>{ if(e.target === aboutBackdrop) closeAboutModal(); });
 
 /* ============================================================
    KAPATILABİLİR POP-UP (INTERSTITIAL) REKLAM MANTIĞI
    ============================================================ */
 const adModalBackdrop = document.getElementById('adModalBackdrop');
 let hasShownAd = false;
-let userInteractionCount = 0;
 
 function showAdModal(){
   if(hasShownAd || sessionStorage.getItem('yh_ad_closed')) return;
   hasShownAd = true;
   if(adModalBackdrop) adModalBackdrop.classList.add('show');
 }
-
 function closeAdModal(){
   if(adModalBackdrop) adModalBackdrop.classList.remove('show');
   sessionStorage.setItem('yh_ad_closed', '1');
 }
-
 document.getElementById('adModalClose')?.addEventListener('click', closeAdModal);
 document.getElementById('adSkipBtn')?.addEventListener('click', closeAdModal);
-adModalBackdrop?.addEventListener('click', (e)=>{
-  if(e.target === adModalBackdrop) closeAdModal();
+adModalBackdrop?.addEventListener('click', (e)=>{ if(e.target === adModalBackdrop) closeAdModal(); });
+
+setTimeout(()=>{ showAdModal(); }, 25000);
+
+/* ============================================================
+   1. 🔮 "RUH ŞEHRİNİ BUL" QUIZ MODU MANTIĞI
+   ============================================================ */
+const quizModal = document.getElementById('quizModal');
+const quizStepContainer = document.getElementById('quizStepContainer');
+let quizAnswers = {};
+let currentQuizStep = 0;
+
+const QUIZ_QUESTIONS = [
+  {
+    title: "1. Nasıl bir doğa ve ortam hayal ediyorsun?",
+    subtitle: "Sabah pencereyi açtığında gözünün önünde ne olsun?",
+    options: [
+      { emoji: "🌊", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1 } },
+      { emoji: "🌲", label: "Yüksek Dağlar & Çam Kokulu Ormanlar", set: { rakim: [400, 2000] } },
+      { emoji: "🏙️", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10] } },
+      { emoji: "🏡", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500] } }
+    ]
+  },
+  {
+    title: "2. Sıcaklık ve hava tercihin nasıl?",
+    subtitle: "Hangi iklim sana enerji veriyor?",
+    options: [
+      { emoji: "☀️", label: "Sıcak & Bol Güneşli (Yaz Tutkunu)", set: { yaz_sicaklik: [26, 35] } },
+      { emoji: "⛅", label: "Ilıman, Serin & Dengeli Hava", set: { yillik_sicaklik: [10, 17] } },
+      { emoji: "❄️", label: "Kar Yağışlı & Soğuk Kış Günleri", set: { kis_sicaklik: [-10, 2], kar_yagisi: [30, 300] } }
+    ]
+  },
+  {
+    title: "3. Güvenlik ve Risk Toleransın?",
+    subtitle: "Doğal afet kaygıların senin için ne kadar belirleyici?",
+    options: [
+      { emoji: "🛡️", label: "Deprem Riski En Düşük Güvenli Bölgeler", set: { depremRiski: [0, 2] } },
+      { emoji: "🍃", label: "Temiz Hava & Sıfır Kirlilik (Düşük AQI)", set: { aqi: [0, 40] } },
+      { emoji: "🤷‍♂️", label: "Fark Etmez, Manzara ve Yaşam Kalitesi Önemli", set: {} }
+    ]
+  }
+];
+
+function startQuiz(){
+  quizAnswers = {};
+  currentQuizStep = 0;
+  renderQuizStep();
+  quizModal?.classList.add('show');
+}
+
+function renderQuizStep(){
+  if(currentQuizStep >= QUIZ_QUESTIONS.length){
+    calculateQuizResult();
+    return;
+  }
+
+  const q = QUIZ_QUESTIONS[currentQuizStep];
+  const pct = Math.round(((currentQuizStep + 1) / QUIZ_QUESTIONS.length) * 100);
+
+  quizStepContainer.innerHTML = `
+    <h2>🔮 Ruh Şehrini Bul (${currentQuizStep + 1}/${QUIZ_QUESTIONS.length})</h2>
+    <p class="quiz-sub">${q.title}</p>
+    <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
+    <div class="quiz-options-grid">
+      ${q.options.map((opt, i) => `
+        <button class="quiz-opt-btn" data-idx="${i}">
+          <span class="emoji">${opt.emoji}</span>
+          <span>${opt.label}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  quizStepContainer.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = +btn.dataset.idx;
+      Object.assign(quizAnswers, q.options[idx].set);
+      currentQuizStep++;
+      renderQuizStep();
+    });
+  });
+}
+
+function calculateQuizResult(){
+  // Sıfırla ve quiz yanıtlarını uygula
+  FILTERS.forEach(g=>g.items.forEach(f=>{
+    if(f.type==='range') setRangeVal(f.key, f.min, f.max);
+    else if(f.type==='tri') setTriVal(f.key, 0);
+  }));
+
+  Object.entries(quizAnswers).forEach(([k, v])=>{
+    if(Array.isArray(v)) setRangeVal(k, v[0], v[1]);
+    else if(typeof v === 'number') setTriVal(k, v);
+  });
+
+  update();
+
+  // En yüksek skorlu şehri bul
+  let bestCity = null;
+  let bestScore = -1;
+  
+  [...RAW.iller, ...RAW.ilceler].forEach(c=>{
+    const res = evalCity(c);
+    if(res.score > bestScore){
+      bestScore = res.score;
+      bestCity = c;
+    }
+  });
+
+  if(bestCity){
+    const type = bestCity.il_id ? 'ilce' : 'il';
+    const isIlce = type === 'ilce';
+    const ilName = isIlce ? (RAW.iller.find(i=>i.id===bestCity.il_id)?.ad || '') : '';
+    const fullName = isIlce ? `${bestCity.ad} (${ilName})` : bestCity.ad;
+
+    quizStepContainer.innerHTML = `
+      <div class="quiz-result-box">
+        <span class="trophy">🏆✨</span>
+        <div class="about-badge">Ruh Şehriniz Bulundu!</div>
+        <h3>${fullName}</h3>
+        <p>Senin yaşam kriterlerinle <b>%${bestScore}</b> mükemmel uyum sağlıyor!</p>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button class="btn active" id="btnQuizGoMap">🗺️ Haritada Göster</button>
+          <button class="social-btn insta" id="btnQuizShare">📸 Hikayede Paylaş</button>
+        </div>
+      </div>
+    `;
+
+    // Konfeti efekti!
+    if(typeof confetti === 'function'){
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+
+    document.getElementById('btnQuizGoMap')?.addEventListener('click', ()=>{
+      quizModal.classList.remove('show');
+      if(isIlce){
+        renderIlcelerLazy();
+        if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+        map.flyTo([bestCity.lat, bestCity.lng], 10.5, {duration:0.8});
+        setTimeout(()=> openCity(bestCity, 'ilce'), 600);
+      } else {
+        map.flyTo([bestCity.lat, bestCity.lng], 8, {duration:0.8});
+        setTimeout(()=> openCity(bestCity, 'il'), 600);
+      }
+    });
+
+    document.getElementById('btnQuizShare')?.addEventListener('click', ()=>{
+      quizModal.classList.remove('show');
+      openShareModal(bestCity, bestScore);
+    });
+  }
+}
+
+document.getElementById('btnStartQuiz')?.addEventListener('click', startQuiz);
+document.getElementById('quizClose')?.addEventListener('click', ()=> quizModal?.classList.remove('show'));
+
+/* ============================================================
+   2. 🎲 "BENİ ŞAŞIRT!" (RASTGELE ŞEHİR BUTONU)
+   ============================================================ */
+document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
+  const validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
+  if(validList.length === 0) return;
+
+  const target = validList[Math.floor(Math.random() * validList.length)];
+  const isIlce = !!target.il_id;
+  const res = evalCity(target);
+
+  if(typeof confetti === 'function'){
+    confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+  }
+
+  if(isIlce){
+    renderIlcelerLazy();
+    if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+    map.flyTo([target.lat, target.lng], 10.5, {duration: 0.8});
+    setTimeout(()=> openCity(target, 'ilce'), 600);
+  } else {
+    map.flyTo([target.lat, target.lng], 8, {duration: 0.8});
+    setTimeout(()=> openCity(target, 'il'), 600);
+  }
 });
 
-// Sitede 25 saniye gezindikten sonra 1 kez gösterilir
-setTimeout(()=>{
-  showAdModal();
-}, 25000);
+/* ============================================================
+   3. 📸 INSTAGRAM STORY GÖRSEL KARTI ÜRETİCİSİ (CANVAS)
+   ============================================================ */
+const shareModal = document.getElementById('shareModal');
+const shareCanvas = document.getElementById('shareCanvas');
+
+function openShareModal(city, score){
+  if(!shareModal || !shareCanvas) return;
+  shareModal.classList.add('show');
+
+  const ctx = shareCanvas.getContext('2d');
+  const w = shareCanvas.width;
+  const h = shareCanvas.height;
+
+  // Arka plan gradyanı
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, '#0f172a');
+  grad.addColorStop(0.5, '#1e293b');
+  grad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Üst Başlık / Logo
+  ctx.fillStyle = '#3b82f6';
+  ctx.font = 'bold 22px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🗺️ Yaşam Haritası', w/2, 70);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '14px sans-serif';
+  ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 100);
+
+  // Rozet Çemberi
+  const isIlce = !!city.il_id;
+  const ilName = isIlce ? (RAW.iller.find(i=>i.id===city.il_id)?.ad || '') : '';
+  const name = isIlce ? `${city.ad}` : city.ad;
+  const subName = isIlce ? `${ilName} ili` : (city.bolge || 'Türkiye');
+
+  ctx.beginPath();
+  ctx.arc(w/2, 280, 110, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Uyum Skoru
+  ctx.fillStyle = '#22c55e';
+  ctx.font = 'bold 54px sans-serif';
+  ctx.fillText(`%${score}`, w/2, 270);
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.fillText('UYUM SKORU', w/2, 310);
+
+  // Şehir Adı
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 36px sans-serif';
+  ctx.fillText(name, w/2, 460);
+
+  ctx.fillStyle = '#60a5fa';
+  ctx.font = '18px sans-serif';
+  ctx.fillText(subName, w/2, 495);
+
+  // Özellik Detay Kutusu
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  ctx.roundRect ? ctx.roundRect(40, 540, w - 80, 240, 16) : ctx.fillRect(40, 540, w - 80, 240);
+  ctx.fill();
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = '15px sans-serif';
+  ctx.textAlign = 'left';
+
+  const stats = [
+    `🌡️ Yıllık Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
+    `🌊 Deniz Mesafesi: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
+    `⛰️ Rakım / Yükseklik: ${city.rakim || 0} m`,
+    `💨 Canlı Hava (AQI): ${city.aqi || 25} AQI`,
+    `🍃 Canlı Nem Oranı: %${city.nem || 60}`
+  ];
+
+  stats.forEach((s, idx) => {
+    ctx.fillText(s, 60, 580 + (idx * 40));
+  });
+
+  // Footer Alt Yazı
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Sen de kendi ruh şehrini keşfet: yasamharitasi.com', w/2, 890);
+  ctx.fillStyle = '#64748b';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('Geliştirici: Batuhan Akcan (@batuhann_akcan)', w/2, 920);
+}
+
+document.getElementById('shareClose')?.addEventListener('click', ()=> shareModal?.classList.remove('show'));
+document.getElementById('btnDownloadStory')?.addEventListener('click', ()=>{
+  if(!shareCanvas) return;
+  const link = document.createElement('a');
+  link.download = `yasam-haritasi-ruh-sehrim.png`;
+  link.href = shareCanvas.toDataURL('image/png');
+  link.click();
+});
+
+/* ============================================================
+   4. ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI MANTIĞI
+   ============================================================ */
+const compareModal = document.getElementById('compareModal');
+const compSelect1 = document.getElementById('compSelect1');
+const compSelect2 = document.getElementById('compSelect2');
+
+function populateCompareSelects(){
+  if(!compSelect1 || !compSelect2) return;
+  let html = '<option value="">Şehir veya ilçe seçin...</option>';
+  RAW.iller.forEach(c => html += `<option value="il_${c.id}">🏙️ ${c.ad} (İl)</option>`);
+  RAW.ilceler.forEach(d => html += `<option value="ilce_${d.id}">📍 ${d.ad} (İlçe)</option>`);
+  compSelect1.innerHTML = html;
+  compSelect2.innerHTML = html;
+}
+
+function renderCompareTable(){
+  const val1 = compSelect1.value;
+  const val2 = compSelect2.value;
+  const container = document.getElementById('compareTableContainer');
+  if(!val1 || !val2 || !container){
+    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için 2 şehir seçin</div>';
+    return;
+  }
+
+  const getItem = (val)=>{
+    const [type, id] = val.split('_');
+    return type==='il' ? RAW.iller.find(i=>i.id==+id) : RAW.ilceler.find(d=>d.id==+id);
+  };
+
+  const c1 = getItem(val1);
+  const c2 = getItem(val2);
+  if(!c1 || !c2) return;
+
+  const res1 = evalCity(c1);
+  const res2 = evalCity(c2);
+
+  container.innerHTML = `
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Özellik</th>
+          <th>${c1.ad}</th>
+          <th>${c2.ad}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="feature">Uyum Skoru</td>
+          <td class="${res1.score>=res2.score?'winner':''}">%${res1.score}</td>
+          <td class="${res2.score>=res1.score?'winner':''}">%${res2.score}</td>
+        </tr>
+        <tr>
+          <td class="feature">Yıllık Sıcaklık</td>
+          <td>${c1.yillik_sicaklik || '—'} °C</td>
+          <td>${c2.yillik_sicaklik || '—'} °C</td>
+        </tr>
+        <tr>
+          <td class="feature">Deniz Kıyısı</td>
+          <td>${c1.deniz ? 'Evet' : 'Hayır'}</td>
+          <td>${c2.deniz ? 'Evet' : 'Hayır'}</td>
+        </tr>
+        <tr>
+          <td class="feature">Rakım</td>
+          <td>${c1.rakim || 0} m</td>
+          <td>${c2.rakim || 0} m</td>
+        </tr>
+        <tr>
+          <td class="feature">Yıllık Yağış</td>
+          <td>${c1.yillik_yagis || '—'} mm</td>
+          <td>${c2.yillik_yagis || '—'} mm</td>
+        </tr>
+        <tr>
+          <td class="feature">Deprem Riski</td>
+          <td>${c1.depremRiski || 3}/5</td>
+          <td>${c2.depremRiski || 3}/5</td>
+        </tr>
+        <tr>
+          <td class="feature">İnternet Hızı</td>
+          <td>${c1.internet || 40} Mbps</td>
+          <td>${c2.internet || 40} Mbps</td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+document.getElementById('btnCompare')?.addEventListener('click', ()=>{
+  populateCompareSelects();
+  compareModal?.classList.add('show');
+});
+document.getElementById('compareClose')?.addEventListener('click', ()=> compareModal?.classList.remove('show'));
+compSelect1?.addEventListener('change', renderCompareTable);
+compSelect2?.addEventListener('change', renderCompareTable);
 
 /* ============================================================
    VERİ YÜKLEME
@@ -640,6 +1019,8 @@ function popupHtml(c, res, type){
   const altBaslik = type==='ilce' ? `${ilAdi} ili` : c.bolge;
   const live = c.canli;
   const liveBadge = live ? `<span class="fresh-badge ${live.age_h>6?'stale':''}">${iconSvg('droplet',11)} ${live.nem}% • AQI ${live.aqi} · ${live.age_h}sa önce</span>` : '';
+  const isFav = favorites.has(`${type}_${c.id}`);
+
   const grid = [
     ['Nüfus', c.nufus? fmtNum(c.nufus,'bin') : '—', 'users'],
     ['Rakım', c.rakim!=null? c.rakim+' m' : '—', 'mountain'],
@@ -654,8 +1035,15 @@ function popupHtml(c, res, type){
     ['İnternet', c.internet!=null? c.internet+' Mbps' : '—', 'wifi'],
     ['Deprem', c.depremRiski!=null? c.depremRiski+'/5' : '—', 'activity'],
   ].map(r=>`<div><span class="k">${iconSvg(r[2],12)} ${r[0]}</span><b>${r[1]}</b></div>`).join('');
+
   return `<div class="pop">
-    <h3>${iconSvg('map-pin',15)} ${baslik}</h3>
+    <h3>
+      <span class="pop-title-left">${iconSvg('map-pin',15)} ${baslik}</span>
+      <div class="pop-actions-top">
+        <button class="pop-btn fav ${isFav?'active':''}" onclick="toggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${isFav?'❤️':'🤍'}</button>
+        <button class="pop-btn share" onclick="openShareModal(RAW.${type==='il'?'iller':'ilceler'}.find(x=>x.id===${c.id}), ${res.score})" title="Instagram Story Kartı Oluştur">📸</button>
+      </div>
+    </h3>
     <div class="region">${altBaslik}</div>
     <div class="scoretxt"><span>Uyum skoru</span><b style="color:${col}">%${res.score} ${res.eligible?'':'(elendi)'}</b></div>
     <div class="scorebar"><div class="scorefill" style="width:${res.score}%;background:${col}"></div></div>

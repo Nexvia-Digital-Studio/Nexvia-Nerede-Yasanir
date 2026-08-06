@@ -124,6 +124,30 @@ body.light-theme .ic-moon{display:none;}
 .search-item .item-sub { font-size: 10px; color: var(--muted); }
 .search-item:hover .item-sub { color: rgba(255,255,255,0.85); }
 
+/* İnteraktif Aksiyon Butonları (Quiz, Surprise, Fav) */
+.interactive-bar {
+  display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;
+}
+.action-btn {
+  flex:1; min-width:30%; padding:6px 8px; border:none; border-radius:8px;
+  font-size:11px; font-weight:700; cursor:pointer; transition:.2s; color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; gap:4px; text-shadow:0 1px 2px rgba(0,0,0,0.3);
+}
+.quiz-btn {
+  background:linear-gradient(135deg,#8b5cf6,#6d28d9); box-shadow:0 3px 10px rgba(139,92,246,0.3);
+}
+.quiz-btn:hover { transform:scale(1.03); background:linear-gradient(135deg,#9333ea,#7c3aed); }
+
+.surprise-btn {
+  background:linear-gradient(135deg,#f59e0b,#d97706); box-shadow:0 3px 10px rgba(245,158,11,0.3);
+}
+.surprise-btn:hover { transform:scale(1.03); background:linear-gradient(135deg,#fbbf24,#f59e0b); }
+
+.fav-btn {
+  background:linear-gradient(135deg,#ec4899,#be185d); box-shadow:0 3px 10px rgba(236,72,153,0.3);
+}
+.fav-btn:hover { transform:scale(1.03); background:linear-gradient(135deg,#f43f5e,#e11d48); }
+
 /* Hazır Yaşam Tarzı Filtre Çipleri */
 .preset-chips { margin-top: 10px; }
 .preset-title { font-size: 10px; color: #cbd5e1; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
@@ -244,101 +268,57 @@ body.light-theme .ic-moon{display:none;}
 }
 
 /* ============================================================
-   KAPATILABİLİR POP-UP (INTERSTITIAL) REKLAM MODALI
+   QUIZ, COMPARE & SHARE MODAL STİLLERİ
    ============================================================ */
-.ad-modal-backdrop {
-  position:fixed; inset:0; z-index:999999; background:rgba(0,0,0,0.72);
-  backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity .25s ease; padding:20px;
-}
-.ad-modal-backdrop.show {
-  opacity:1; pointer-events:auto;
-}
-.ad-modal-card {
-  background:var(--panel); border:1px solid var(--border); border-radius:16px;
-  width:360px; max-width:92vw; padding:18px; text-align:center; position:relative;
-  box-shadow:0 16px 40px var(--shadow); color:var(--txt); transform:scale(0.95);
-  transition:transform .25s ease;
-}
-.ad-modal-backdrop.show .ad-modal-card { transform:scale(1); }
 
-.ad-modal-header {
-  display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;
-}
-.ad-sponsor-tag {
-  font-size:11px; font-weight:700; color:var(--accent2); text-transform:uppercase; letter-spacing:.5px;
-}
-.ad-modal-close {
-  background:rgba(255,255,255,0.1); border:1px solid var(--border); color:var(--txt);
-  font-size:20px; width:28px; height:28px; border-radius:50%; cursor:pointer;
-  display:inline-flex; align-items:center; justify-content:center; transition:.2s;
-}
-.ad-modal-close:hover { background:var(--bad); color:#fff; border-color:var(--bad); }
+/* Quiz Card */
+.quiz-card { max-width:480px; padding:26px 22px; text-align:left; }
+.quiz-card h2 { font-size:20px; font-weight:800; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.quiz-card .quiz-sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
 
-.ad-modal-body {
-  min-height:200px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;
-}
-.ad-placeholder-box {
-  width:100%; height:220px; background:var(--bg); border:1px dashed var(--border);
-  border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-  padding:16px; color:var(--muted); font-size:12px; gap:8px;
-}
-.ad-skip-btn {
-  width:100%; padding:10px; border:none; background:var(--accent); color:#fff;
-  font-size:13px; font-weight:700; border-radius:10px; cursor:pointer; transition:.2s;
-  box-shadow:0 4px 12px rgba(59,130,246,0.3);
-}
-.ad-skip-btn:hover { background:linear-gradient(135deg,#2563eb,#1d4ed8); transform:translateY(-1px); }
+.quiz-progress-bar { height:6px; background:var(--bg); border-radius:4px; overflow:hidden; margin-bottom:18px; }
+.quiz-progress-fill { height:100%; background:linear-gradient(90deg,#8b5cf6,#3b82f6); width:25%; transition:width .3s; }
 
-/* ============================================================
-   HAKKINDA / BEN KİMİM MODALI (Batuhan Akcan)
-   ============================================================ */
-.about-backdrop {
-  position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.65);
-  backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center;
-  opacity:0; pointer-events:none; transition:opacity .25s ease; padding:20px;
+.quiz-options-grid { display:flex; flex-direction:column; gap:10px; }
+.quiz-opt-btn {
+  padding:14px 16px; background:var(--bg); border:1px solid var(--border);
+  border-radius:12px; color:var(--txt); font-size:13px; font-weight:700;
+  cursor:pointer; transition:.2s; text-align:left; display:flex; align-items:center; gap:12px;
 }
-.about-backdrop.show {
-  opacity:1; pointer-events:auto;
+.quiz-opt-btn:hover {
+  background:var(--panel2); border-color:var(--accent); transform:translateX(4px);
 }
-.about-card {
-  background:var(--panel); border:1px solid var(--border); border-radius:16px;
-  max-width:440px; width:100%; padding:24px; text-align:center; position:relative;
-  box-shadow:0 12px 36px var(--shadow); color:var(--txt); transform:translateY(15px);
-  transition:transform .25s ease;
-}
-.about-backdrop.show .about-card { transform:translateY(0); }
+.quiz-opt-btn span.emoji { font-size:22px; }
 
-.about-close {
-  position:absolute; top:12px; right:14px; background:none; border:none;
-  font-size:22px; color:var(--muted); cursor:pointer; padding:4px 8px; border-radius:8px;
-}
-.about-close:hover{color:var(--txt); background:var(--panel2);}
+.quiz-result-box { text-align:center; padding:10px 0; }
+.quiz-result-box .trophy { font-size:48px; margin-bottom:8px; display:inline-block; }
+.quiz-result-box h3 { font-size:24px; font-weight:800; color:var(--good); margin-bottom:4px; }
+.quiz-result-box p { font-size:13px; color:var(--muted); margin-bottom:16px; }
 
-.about-avatar {
-  width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-  display:inline-flex; align-items:center; justify-content:center; font-size:32px;
-  margin-bottom:12px; box-shadow:0 4px 14px rgba(59,130,246,0.4);
+/* Compare Modal */
+.compare-card { max-width:680px; padding:24px; }
+.compare-card .sub { font-size:12px; color:var(--muted); margin-bottom:16px; }
+.compare-selectors { display:flex; gap:10px; align-items:center; margin-bottom:16px; }
+.comp-select {
+  flex:1; padding:10px 12px; background:var(--bg); border:1px solid var(--border);
+  border-radius:10px; color:var(--txt); font-size:13px; outline:none;
 }
-.about-card h2 { font-size:20px; font-weight:800; margin-bottom:4px; }
-.about-badge {
-  display:inline-block; font-size:11px; font-weight:700; color:var(--good);
-  background:rgba(34,197,94,0.15); padding:3px 10px; border-radius:12px; margin-bottom:14px;
-}
-.about-text { font-size:13px; line-height:1.6; color:var(--txt); opacity:0.9; margin-bottom:18px; text-align:left; }
+.vs-badge { font-size:14px; font-weight:900; color:var(--accent2); }
 
-.social-links { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
-.social-btn {
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  padding:10px 16px; border-radius:10px; font-size:13px; font-weight:700;
-  text-decoration:none; transition:.2s; color:#fff;
+.compare-table-wrap { max-height:360px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; }
+.compare-table { width:100%; border-collapse:collapse; font-size:12px; }
+.compare-table th, .compare-table td { padding:10px 12px; border-bottom:1px solid var(--border); text-align:center; }
+.compare-table th { background:var(--panel2); font-weight:700; color:var(--muted); }
+.compare-table td.feature { text-align:left; font-weight:600; color:var(--txt); background:var(--bg); }
+.compare-table td.winner { color:var(--good); font-weight:800; }
+
+/* Share Modal & Canvas Preview */
+.share-card { max-width:440px; padding:20px; text-align:center; }
+.canvas-preview-wrap {
+  margin:14px 0; border:1px solid var(--border); border-radius:14px; overflow:hidden;
+  box-shadow:0 8px 24px var(--shadow); background:#000; display:flex; justify-content:center;
 }
-.social-btn.insta {
-  background:linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045);
-  box-shadow:0 4px 14px rgba(253,29,29,0.35);
-}
-.social-btn.insta:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(253,29,29,0.5); }
-.about-footer-text { font-size:11px; color:var(--muted); }
+#shareCanvas { width:100%; max-width:270px; height:auto; display:block; }
 
 /* MAP */
 #map{flex:1; height:100%; background:var(--bg); z-index:1;}
@@ -430,7 +410,16 @@ body.light-theme .ic-moon{display:none;}
 .leaflet-popup-tip{background:var(--panel);}
 .leaflet-popup-content{margin:12px 14px;}
 .pop{min-width:240px; max-width:290px;}
-.pop h3{font-size:16px; font-weight:700; margin-bottom:2px; display:flex; align-items:center; gap:6px;}
+.pop h3{font-size:16px; font-weight:700; margin-bottom:2px; display:flex; justify-content:space-between; align-items:center; gap:6px;}
+.pop .pop-title-left { display:flex; align-items:center; gap:6px; }
+.pop .pop-actions-top { display:flex; gap:4px; }
+.pop .pop-btn {
+  background:var(--panel2); border:1px solid var(--border); color:var(--txt);
+  padding:4px 8px; border-radius:6px; font-size:11px; cursor:pointer; transition:.15s;
+}
+.pop .pop-btn:hover { background:var(--accent); color:#fff; }
+.pop .pop-btn.fav.active { background:#be185d; color:#fff; border-color:#be185d; }
+
 .pop .region{font-size:11px; color:var(--accent2); margin-bottom:8px;}
 .pop .scorebar{margin:8px 0; background:var(--bg); border-radius:6px; height:8px; overflow:hidden;}
 .pop .scorefill{height:100%; border-radius:6px; transition:width .4s;}
