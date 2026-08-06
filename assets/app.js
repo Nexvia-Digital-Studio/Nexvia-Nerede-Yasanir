@@ -1,6 +1,6 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Şehir Fotoğraflı Canvas Story, URL Slug, Kalp Favorilerim Harita Modu)
+   (Nüfus Düzeltmesi, Favoriler Harita Modu Tamiri, 4K Şehir Fotoğraflı Story, Tıklamalı Karşılaştırma)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
@@ -100,6 +100,7 @@ let state = {};
 let strictMode = true;
 let layerMode = 'auto';     // 'auto' | 'il' | 'ilce'
 let favOnlyMode = false;    // Sadece favorileri haritada göster modu
+let compareSelection1 = null; // Harita üzerinden tıklamalı karşılaştırma 1. şehir
 let labelMode = localStorage.getItem('yh_label') || 'full'; // 'full' | 'compact'
 let currentTheme = localStorage.getItem('yh_theme') || 'dark';
 
@@ -134,9 +135,26 @@ window.appToggleFavMode = function(){
     btn.classList.toggle('active', favOnlyMode);
   }
   update();
+  updateLayers();
   if(favOnlyMode && favorites.size === 0){
     alert('Henüz favoriye eklenmiş bir il veya ilçe yok. Kalp ikonuna basarak favorilerinizi ekleyebilirsiniz!');
   }
+};
+
+// Tıklamalı Harita Karşılaştırma Başlatma
+window.appStartMapCompare = function(id, type){
+  const item = type==='il' ? RAW.iller.find(i=>i.id===id) : RAW.ilceler.find(d=>d.id===id);
+  if(!item) return;
+  compareSelection1 = { id, type, name: item.ad };
+  const banner = document.getElementById('mapCompareBanner');
+  const txt = document.getElementById('mapCompareText');
+  if(txt) txt.innerHTML = `${iconSvg('activity',14)} 1. Şehir Seçildi: <b>${item.ad}</b>. Karşılaştırmak için haritada 2. şehre tıkla!`;
+  if(banner) banner.classList.add('show');
+};
+
+window.appCancelMapCompare = function(){
+  compareSelection1 = null;
+  document.getElementById('mapCompareBanner')?.classList.remove('show');
 };
 
 window.appOpenQuiz = function(){ startQuiz(); };
@@ -508,12 +526,12 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   3. 📸 HD ŞEHİR FOTOĞRAFLI INSTAGRAM STORY KARTI ÜRETİCİSİ
+   3. 📸 HD 4K TÜRKİYE FOTOĞRAFLI INSTAGRAM STORY KARTI ÜRETİCİSİ
    ============================================================ */
 const shareModal = document.getElementById('shareModal');
 const shareCanvas = document.getElementById('shareCanvas');
 
-// Yüksek Kalite Unsplash Manzara/Şehir Fotoğraf Haritası
+// Bölge ve İllere Özel 4K Gerçek Türkiye Görselleri
 const CITY_PHOTOS = {
   'mugla': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&q=80',
   'izmir': 'https://images.unsplash.com/photo-1589139832322-a795764049fa?auto=format&fit=crop&w=1080&q=80',
@@ -522,17 +540,29 @@ const CITY_PHOTOS = {
   'amasra': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1080&q=80',
   'trabzon': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80',
   'nevsehir': 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=1080&q=80',
-  'default_sea': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1080&q=80',
-  'default_mountain': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1080&q=80',
-  'default_city': 'https://images.unsplash.com/photo-1477959858617-67f30ac72604?auto=format&fit=crop&w=1080&q=80'
+  'bursa': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1080&q=80',
+  'ankara': 'https://images.unsplash.com/photo-1477959858617-67f30ac72604?auto=format&fit=crop&w=1080&q=80',
+  
+  // Bölgelere özel gerçek görseller
+  'ege': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&q=80',
+  'akdeniz': 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1080&q=80',
+  'karadeniz': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80',
+  'marmara': 'https://images.unsplash.com/photo-1527838832700-5059252407fa?auto=format&fit=crop&w=1080&q=80',
+  'ic_anadolu': 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=1080&q=80',
+  'dogu': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1080&q=80',
+  'guneydogu': 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=1080&q=80',
 };
 
 function getCityPhotoUrl(city){
   const slug = slugify(city.ad);
   if(CITY_PHOTOS[slug]) return CITY_PHOTOS[slug];
-  if(city.deniz) return CITY_PHOTOS['default_sea'];
-  if((city.rakim||0) > 600) return CITY_PHOTOS['default_mountain'];
-  return CITY_PHOTOS['default_city'];
+  if(city.deniz) return CITY_PHOTOS['ege'];
+  
+  const bolgeSlug = slugify(city.bolge || '');
+  if(CITY_PHOTOS[bolgeSlug]) return CITY_PHOTOS[bolgeSlug];
+
+  if((city.rakim||0) > 600) return CITY_PHOTOS['dogu'];
+  return CITY_PHOTOS['ic_anadolu'];
 }
 
 function openShareModal(city, score){
@@ -553,9 +583,9 @@ function openShareModal(city, score){
 
     // Koyu Gradyan Filtre Katmanı (Okunabilirlik için)
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(15, 23, 42, 0.75)');
-    grad.addColorStop(0.4, 'rgba(15, 23, 42, 0.55)');
-    grad.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
+    grad.addColorStop(0, 'rgba(15, 23, 42, 0.78)');
+    grad.addColorStop(0.4, 'rgba(15, 23, 42, 0.58)');
+    grad.addColorStop(1, 'rgba(15, 23, 42, 0.94)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
@@ -577,7 +607,7 @@ function openShareModal(city, score){
 
     ctx.beginPath();
     ctx.arc(w/2, 270, 105, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.70)';
     ctx.fill();
     ctx.strokeStyle = '#22c55e';
     ctx.lineWidth = 4;
@@ -605,7 +635,7 @@ function openShareModal(city, score){
     ctx.shadowBlur = 0; // Sıfırla
 
     // Özellik Detay Kutusu (Cam Efekti)
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
     if (ctx.roundRect) ctx.roundRect(40, 530, w - 80, 240, 16); else ctx.fillRect(40, 530, w - 80, 240);
     ctx.fill();
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
@@ -640,7 +670,6 @@ function openShareModal(city, score){
 
   img.onload = renderCanvasContent;
   img.onerror = () => {
-    // Fotoğraf yüklenemezse varsayılan düz gradyanla çiz
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, w, h);
     renderCanvasContent();
@@ -677,7 +706,7 @@ function renderCompareTable(){
   const val2 = compSelect2.value;
   const container = document.getElementById('compareTableContainer');
   if(!val1 || !val2 || !container){
-    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için 2 şehir seçin</div>';
+    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>';
     return;
   }
 
@@ -840,13 +869,22 @@ function initDerived(){
 /* ============================================================
    FİLTRE UI KURULUMU
    ============================================================ */
+
+// KUSURSUZ TÜRKÇE NÜFUS VE SARI-SAYI BİÇİMLENDİRME (Afyonkarahisar -> 736.9 Bin)
 function fmtNum(v, unit){
-  if(unit==='bin') return (v>=1000? (v/1000).toFixed(v%1000?1:0)+'M' : v+'K');
+  if(unit==='bin'){
+    if(v >= 1000000) return (v / 1000000).toFixed(1) + ' Milyon';
+    if(v >= 1000) return (v / 1000).toFixed(1) + ' Bin';
+    return (v).toLocaleString('tr-TR') + ' kişi';
+  }
+  if(typeof v === 'number' && v >= 1000000) return (v / 1000000).toFixed(1) + ' M';
+  if(typeof v === 'number' && v >= 1000) return (v / 1000).toFixed(1) + 'K';
   return v + (unit? ' '+unit : '');
 }
+
 function fmtRange(f){
   const lo = state[f.key].min, hi = state[f.key].max;
-  if(f.log) return fmtNum(lo,'bin')+' – '+fmtNum(hi,'bin');
+  if(f.log) return fmtNum(lo*1000,'bin')+' – '+fmtNum(hi*1000,'bin');
   return (lo===f.min && hi===f.max) ? 'Tümü' : (lo+' – '+hi+(f.unit?' '+f.unit:''));
 }
 
@@ -1242,6 +1280,17 @@ function updateLayers(){
   } else {
     if(map.hasLayer(layerIlce)) map.removeLayer(layerIlce);
   }
+
+  // Eğer Favoriler modu kapatıldıysa ve normaller gizliyse geri yükle
+  if (!favOnlyMode && showIl) {
+    RAW.iller.forEach(c => {
+      const mk = markersIl[c.id];
+      const res = evalCity(c);
+      if(mk && (res.eligible || !strictMode)) {
+        if(!layerIl.hasLayer(mk)) layerIl.addLayer(mk);
+      }
+    });
+  }
 }
 map.on('zoomend moveend', ()=>{ updateLayers(); });
 
@@ -1254,7 +1303,7 @@ document.getElementById('layerToggle').addEventListener('click', function(e){
 });
 
 /* ============================================================
-   POPUP
+   POPUP (TIKLAMALI KARŞILAŞTIRMA BUTONU DAHİL)
    ============================================================ */
 function popupHtml(c, res, type){
   const isFav = favorites.has(`${type}_${c.id}`);
@@ -1285,6 +1334,7 @@ function popupHtml(c, res, type){
       <span class="pop-title-left">${iconSvg(type==='ilce'?'map-pin':'building',15)} ${baslik}</span>
       <div class="pop-actions-top">
         <button class="pop-btn fav ${isFav?'active':''}" onclick="window.appToggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('heart',13)}</button>
+        <button class="pop-btn cmp" onclick="window.appStartMapCompare(${c.id}, '${type}')" title="Bu Şehri Karşılaştır">${iconSvg('activity',13)} ⚖️</button>
         <button class="pop-btn share" onclick="window.appCopyLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
         <button class="pop-btn share" onclick="window.appShareCity(${c.id}, '${type}')" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
       </div>
@@ -1299,6 +1349,22 @@ function popupHtml(c, res, type){
 }
 
 function openCity(c, type){
+  // TIKLAMALI HARİTA KARŞILAŞTIRMA KONTROLÜ
+  if(compareSelection1 && (compareSelection1.id !== c.id || compareSelection1.type !== type)){
+    const item1Val = `${compareSelection1.type}_${compareSelection1.id}`;
+    const item2Val = `${type}_${c.id}`;
+
+    window.appCancelMapCompare();
+
+    populateCompareSelects();
+    if(compSelect1) compSelect1.value = item1Val;
+    if(compSelect2) compSelect2.value = item2Val;
+
+    renderCompareTable();
+    compareModal?.classList.add('show');
+    return;
+  }
+
   const mk = type==='il' ? markersIl[c.id] : markersIlce[c.id];
   if(!mk) return;
 

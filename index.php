@@ -44,7 +44,7 @@ require __DIR__ . '/lib/icons.php';
         <div id="searchResults" class="search-results"></div>
       </div>
 
-      <!-- İnteraktif Aksiyon Butonları (Kalp İkonlu) -->
+      <!-- İnteraktif Aksiyon Butonları -->
       <div class="interactive-bar">
         <button class="action-btn quiz-btn" id="btnStartQuiz" onclick="window.appOpenQuiz()"><?= icon('compass', 14) ?> Ruh Şehrini Bul</button>
         <button class="action-btn surprise-btn" id="btnSurprise" onclick="window.appOpenSurprise()"><?= icon('rotate', 14) ?> Beni Şaşırt!</button>
@@ -104,6 +104,12 @@ require __DIR__ . '/lib/icons.php';
   </aside>
 
   <div id="map"></div>
+
+  <!-- Tıklamalı Harita Karşılaştırma Bildirim Bandı -->
+  <div class="map-compare-banner" id="mapCompareBanner">
+    <span class="compare-banner-text" id="mapCompareText"><?= icon('activity', 14) ?> 1. Şehir Seçildi. Karşılaştırmak istediğin 2. şehre haritada tıkla!</span>
+    <button class="compare-banner-cancel" onclick="window.appCancelMapCompare()">İptal</button>
+  </div>
 
   <!-- Davet Karşılama Bildirim Bandı -->
   <div class="invite-banner" id="inviteBanner">
@@ -184,7 +190,7 @@ require __DIR__ . '/lib/icons.php';
       <select id="compSelect2" class="comp-select"><option value="">2. Şehri Seçin...</option></select>
     </div>
     <div id="compareTableContainer" class="compare-table-wrap">
-      <div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin</div>
+      <div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>
     </div>
   </div>
 </div>
