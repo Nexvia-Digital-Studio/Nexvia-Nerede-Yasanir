@@ -77,6 +77,17 @@ require __DIR__ . '/lib/icons.php';
       <button class="btn" id="btnCompare" onclick="window.appOpenCompare()"><?= icon('activity', 15) ?> Karşılaştır</button>
     </div>
     
+    <div class="filter-tab-bar" id="filterTabBar">
+      <button class="filter-tab active" data-grp="all"><?= icon('layers', 12) ?> Tümü</button>
+      <button class="filter-tab" data-grp="Coğrafi"><?= icon('globe', 12) ?> Coğrafi</button>
+      <button class="filter-tab" data-grp="Sosyal & Yaşam"><?= icon('music', 12) ?> Sosyal</button>
+      <button class="filter-tab" data-grp="Ekonomi & Ev Kirası"><?= icon('home', 12) ?> Ekonomi</button>
+      <button class="filter-tab" data-grp="İklim"><?= icon('thermometer', 12) ?> İklim</button>
+      <button class="filter-tab" data-grp="Demografi & Sağlık"><?= icon('users', 12) ?> Sağlık</button>
+      <button class="filter-tab" data-grp="Riskler (düşük iyi)"><?= icon('alert', 12) ?> Risk</button>
+      <button class="filter-tab" data-grp="Bölge"><?= icon('compass', 12) ?> Bölge</button>
+    </div>
+
     <div class="filters" id="filters">
       <div style="text-align:center; color:var(--muted); padding:30px 0; font-size:12px;">
         <?= icon('activity', 18) ?><br>Veriler yükleniyor…

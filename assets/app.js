@@ -493,10 +493,15 @@ function calculateQuizResult(){
 }
 
 /* ============================================================
-   2. 🎲 "BENİ ŞAŞIRT!"
+   2. 🎲 "BENİ ŞAŞIRT!" (FİLTRELERE GÖRE DİNAMİK SÜRPRİZ GARANTİSİ)
    ============================================================ */
 document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
-  const validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
+  let validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
+  if(validList.length === 0){
+    const scored = [...RAW.iller, ...RAW.ilceler].map(c=> ({ city: c, res: evalCity(c) }));
+    scored.sort((a,b)=> b.res.score - a.res.score);
+    validList = scored.slice(0, 15).map(s=> s.city);
+  }
   if(validList.length === 0) return;
 
   const target = validList[Math.floor(Math.random() * validList.length)];
@@ -1038,6 +1043,33 @@ function buildFilters(){
   });
   wireFilters();
   wirePresets();
+  wireFilterTabs();
+}
+
+function wireFilterTabs(){
+  const tabContainer = document.getElementById('filterTabBar');
+  if(!tabContainer) return;
+
+  tabContainer.querySelectorAll('.filter-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      const grpTarget = tab.dataset.grp;
+      tabContainer.querySelectorAll('.filter-tab').forEach(x=>x.classList.remove('active'));
+      tab.classList.add('active');
+
+      const filterCont = document.getElementById('filters');
+      if(!filterCont) return;
+
+      filterCont.querySelectorAll('.grp').forEach(grp=>{
+        const label = grp.querySelector('.label')?.textContent.trim();
+        if(grpTarget === 'all' || label === grpTarget){
+          grp.style.display = 'block';
+          if(grpTarget !== 'all') grp.classList.add('open');
+        } else {
+          grp.style.display = 'none';
+        }
+      });
+    });
+  });
 }
 
 function setRangeVal(key, min, max){
