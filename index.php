@@ -105,6 +105,12 @@ require __DIR__ . '/lib/icons.php';
 
   <div id="map"></div>
 
+  <!-- Davet Karşılama Bildirim Bandı -->
+  <div class="invite-banner" id="inviteBanner">
+    <span class="invite-text" id="inviteText">✨ Bir arkadaşın sana özel yaşam alanı önerdi!</span>
+    <button class="invite-close" id="inviteClose">&times;</button>
+  </div>
+
   <!-- Harita Üstü Reklam Şeridi (Google AdSense Slot #2) -->
   <div class="map-top-ad">
     <span class="ad-label">Sponsorlu</span>
@@ -144,6 +150,18 @@ require __DIR__ . '/lib/icons.php';
 <!-- ============================================================
    MODALLAR
    ============================================================ -->
+
+<!-- ❤️ FAVORİLERİM MODALI -->
+<div class="about-backdrop" id="favsModal">
+  <div class="about-card favs-card">
+    <button class="about-close" id="favsClose">&times;</button>
+    <h2>❤️ Kaydedilen Favori Yerleriniz</h2>
+    <p class="sub">Beğendiğiniz il ve ilçeler listesi.</p>
+    <div id="favsListContainer" class="favs-list-wrap">
+      <div style="text-align:center; color:var(--muted); padding:30px;">Henüz kaydedilmiş favori yer bulunmuyor.</div>
+    </div>
+  </div>
+</div>
 
 <!-- 🔮 RUH ŞEHRİNİ BUL QUIZ MODALI -->
 <div class="about-backdrop" id="quizModal">

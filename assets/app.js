@@ -1,6 +1,6 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Quiz, Beni Şaşırt, Instagram Hikaye Kartı, Karşılaştırma, Favoriler)
+   (Quiz, Beni Şaşırt, Instagram Hikaye Kartı, Karşılaştırma, Favoriler, Davet Linki)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
@@ -103,6 +103,7 @@ function toggleFav(id, type){
   else favorites.add(key);
   saveFavs();
   update();
+  renderFavsList();
 }
 
 const markersIl = {};     // id → marker
@@ -153,6 +154,115 @@ function closeAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.remove('sh
 });
 document.getElementById('aboutClose')?.addEventListener('click', closeAboutModal);
 aboutBackdrop?.addEventListener('click', (e)=>{ if(e.target === aboutBackdrop) closeAboutModal(); });
+
+/* ============================================================
+   ❤️ FAVORİLERİM MODALI
+   ============================================================ */
+const favsModal = document.getElementById('favsModal');
+
+function renderFavsList(){
+  const container = document.getElementById('favsListContainer');
+  if(!container) return;
+
+  if(favorites.size === 0){
+    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Henüz kaydedilmiş favori yer bulunmuyor.</div>';
+    return;
+  }
+
+  let html = '';
+  favorites.forEach(key => {
+    const [type, idStr] = key.split('_');
+    const id = +idStr;
+    const item = type === 'il' ? RAW.iller.find(i=>i.id===id) : RAW.ilceler.find(d=>d.id===id);
+    if(!item) return;
+
+    const res = evalCity(item);
+    const col = colorFor(res.score, res.eligible);
+    const sub = type === 'ilce' ? (RAW.iller.find(i=>i.id===item.il_id)?.ad + ' ili') : item.bolge;
+
+    html += `
+      <div class="fav-item">
+        <div class="fav-item-info">
+          <b>${type==='ilce'?'📍':'🏙️'} ${item.ad}</b>
+          <span>${sub} • Uyum: <b style="color:${col}">%${res.score}</b></span>
+        </div>
+        <div class="fav-item-actions">
+          <button class="btn" onclick="goToFav('${type}', ${item.id})">🗺️ Göster</button>
+          <button class="pop-btn fav active" onclick="toggleFav(${item.id}, '${type}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function goToFav(type, id){
+  favsModal?.classList.remove('show');
+  const item = type === 'il' ? RAW.iller.find(i=>i.id===id) : RAW.ilceler.find(d=>d.id===id);
+  if(!item) return;
+  if(type === 'ilce'){
+    renderIlcelerLazy();
+    if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+    map.flyTo([item.lat, item.lng], 10.5, {duration: 0.8});
+    setTimeout(()=> openCity(item, 'ilce'), 600);
+  } else {
+    map.flyTo([item.lat, item.lng], 8, {duration: 0.8});
+    setTimeout(()=> openCity(item, 'il'), 600);
+  }
+}
+
+document.getElementById('btnShowFavs')?.addEventListener('click', ()=>{
+  renderFavsList();
+  favsModal?.classList.add('show');
+});
+document.getElementById('favsClose')?.addEventListener('click', ()=> favsModal?.classList.remove('show'));
+
+/* ============================================================
+   🔗 PAYLAŞILABİLİR DAVET LİNKİ SİSTEMİ
+   ============================================================ */
+function copyInviteLink(cityName){
+  const url = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(cityName)}`;
+  navigator.clipboard.writeText(url).then(()=>{
+    alert(`✨ Davet bağlantısı kopyalandı:\n\n${url}\n\nArkadaşına göndererek onun da yaşam haritasını keşfetmesini sağlayabilirsin!`);
+  }).catch(()=>{
+    prompt('Davet bağlantısını kopyalayın:', url);
+  });
+}
+
+function checkInviteUrl(){
+  const params = new URLSearchParams(window.location.search);
+  const inviteName = params.get('invite') || params.get('share');
+  if(!inviteName) return;
+
+  const q = inviteName.trim().toLowerCase();
+  const target = RAW.ilceler.find(d=>d.ad.toLowerCase()===q) || RAW.iller.find(c=>c.ad.toLowerCase()===q);
+
+  const banner = document.getElementById('inviteBanner');
+  const txt = document.getElementById('inviteText');
+
+  if(target){
+    if(txt) txt.innerHTML = `✨ Bir arkadaşın senin için <b>${target.ad}</b> şehrini önerdi! Sen de kendi yaşam alanını keşfet.`;
+    if(banner) banner.classList.add('show');
+
+    setTimeout(()=>{
+      const type = target.il_id ? 'ilce' : 'il';
+      if(type==='ilce'){
+        renderIlcelerLazy();
+        if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+        map.flyTo([target.lat, target.lng], 10.5, {duration: 1.0});
+        setTimeout(()=> openCity(target, 'ilce'), 800);
+      } else {
+        map.flyTo([target.lat, target.lng], 8.5, {duration: 1.0});
+        setTimeout(()=> openCity(target, 'il'), 800);
+      }
+    }, 500);
+  }
+}
+
+document.getElementById('inviteClose')?.addEventListener('click', ()=>{
+  document.getElementById('inviteBanner')?.classList.remove('show');
+});
 
 /* ============================================================
    KAPATILABİLİR POP-UP (INTERSTITIAL) REKLAM MANTIĞI
@@ -290,9 +400,12 @@ function calculateQuizResult(){
         <div class="about-badge">Ruh Şehriniz Bulundu!</div>
         <h3>${fullName}</h3>
         <p>Senin yaşam kriterlerinle <b>%${bestScore}</b> mükemmel uyum sağlıyor!</p>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-          <button class="btn active" id="btnQuizGoMap">🗺️ Haritada Göster</button>
-          <button class="social-btn insta" id="btnQuizShare">📸 Hikayede Paylaş</button>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:20px;">
+          <div style="display:flex; gap:10px;">
+            <button class="btn active" id="btnQuizGoMap">🗺️ Haritada Göster</button>
+            <button class="social-btn insta" id="btnQuizShare">📸 Hikayede Paylaş</button>
+          </div>
+          <button class="btn" id="btnQuizInvite" onclick="copyInviteLink('${bestCity.ad}')">🔗 Arkadaşlarını Davet Et</button>
         </div>
       </div>
     `;
@@ -325,7 +438,7 @@ document.getElementById('btnStartQuiz')?.addEventListener('click', startQuiz);
 document.getElementById('quizClose')?.addEventListener('click', ()=> quizModal?.classList.remove('show'));
 
 /* ============================================================
-   2. 🎲 "BENİ ŞAŞIRT!" (RASTGELE ŞEHİR BUTONU)
+   2. 🎲 "BENİ ŞAŞIRT!" (PULSE ANİMASYONLU & OTOMATİK POPUP)
    ============================================================ */
 document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
   const validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
@@ -333,19 +446,30 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
 
   const target = validList[Math.floor(Math.random() * validList.length)];
   const isIlce = !!target.il_id;
+  const type = isIlce ? 'ilce' : 'il';
 
   if(typeof confetti === 'function'){
-    confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   }
+
+  const highlightAndOpen = ()=>{
+    const mk = isIlce ? markersIlce[target.id] : markersIl[target.id];
+    if(mk && mk.getElement()){
+      const el = mk.getElement();
+      el.classList.add('pulse-surprise');
+      setTimeout(()=> el.classList.remove('pulse-surprise'), 4500);
+    }
+    openCity(target, type);
+  };
 
   if(isIlce){
     renderIlcelerLazy();
     if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
     map.flyTo([target.lat, target.lng], 10.5, {duration: 0.8});
-    setTimeout(()=> openCity(target, 'ilce'), 600);
+    setTimeout(highlightAndOpen, 600);
   } else {
-    map.flyTo([target.lat, target.lng], 8, {duration: 0.8});
-    setTimeout(()=> openCity(target, 'il'), 600);
+    map.flyTo([target.lat, target.lng], 8.5, {duration: 0.8});
+    setTimeout(highlightAndOpen, 600);
   }
 });
 
@@ -412,7 +536,7 @@ function openShareModal(city, score){
   ctx.font = '18px sans-serif';
   ctx.fillText(subName, w/2, 495);
 
-  // Özellik Detay Kutusu
+  // Özellik Detay Kutusu (Polifill safe draw)
   ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
   if (ctx.roundRect) ctx.roundRect(40, 540, w - 80, 240, 16); else ctx.fillRect(40, 540, w - 80, 240);
   ctx.fill();
@@ -562,6 +686,7 @@ async function loadData(){
     buildFilters();
     renderMap();
     update();
+    checkInviteUrl();
     bar.style.width = '100%';
     setTimeout(()=>{ document.getElementById('loader').classList.remove('active'); bar.style.width='0'; }, 400);
   } catch(e){
@@ -1037,6 +1162,7 @@ function popupHtml(c, res, type){
       <span class="pop-title-left">${iconSvg('map-pin',15)} ${baslik}</span>
       <div class="pop-actions-top">
         <button class="pop-btn fav ${isFav?'active':''}" onclick="toggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${isFav?'❤️':'🤍'}</button>
+        <button class="pop-btn share" onclick="copyInviteLink('${c.ad}')" title="Davet Bağlantısını Kopyala">🔗 Link</button>
         <button class="pop-btn share" onclick="openShareModal(RAW.${type==='il'?'iller':'ilceler'}.find(x=>x.id===${c.id}), ${res.score})" title="Instagram Story Kartı Oluştur">📸</button>
       </div>
     </h3>
