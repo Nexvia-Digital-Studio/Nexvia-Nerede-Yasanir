@@ -722,27 +722,78 @@ document.getElementById('btnDownloadStory')?.addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   4. ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI MANTIĞI
+   4. ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI (TAM SIĞAN & 1-TIK SS İNDİRME)
    ============================================================ */
 const compareModal = document.getElementById('compareModal');
-const compSelect1 = document.getElementById('compSelect1');
-const compSelect2 = document.getElementById('compSelect2');
+let compValue1 = '';
+let compValue2 = '';
+
+function setupCompSearchInput(inputId, dropdownId, setValCallback){
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  if(!input || !dropdown) return;
+
+  const renderDropdown = (q) => {
+    q = q.trim().toLowerCase();
+    let html = '';
+    const matchesIl = RAW.iller.filter(i=> i.ad.toLowerCase().includes(q)).slice(0, 5);
+    const matchesIlce = RAW.ilceler.filter(d=> d.ad.toLowerCase().includes(q)).slice(0, 7);
+
+    if(matchesIl.length===0 && matchesIlce.length===0){
+      dropdown.innerHTML = '<div class="comp-drop-item" style="color:var(--muted);justify-content:center;">Sonuç bulunamadı</div>';
+      dropdown.classList.add('active');
+      return;
+    }
+
+    matchesIl.forEach(c=>{
+      html += `<div class="comp-drop-item" data-val="il_${c.id}" data-name="${c.ad} (İl)">
+        <span>🏙️ <b>${c.ad}</b> (İl)</span>
+        <span style="font-size:11px;color:var(--muted);">${c.bolge}</span>
+      </div>`;
+    });
+
+    matchesIlce.forEach(d=>{
+      const il = RAW.iller.find(i=>i.id===d.il_id);
+      html += `<div class="comp-drop-item" data-val="ilce_${d.id}" data-name="${d.ad} (${il?il.ad+' ili':''})">
+        <span>📍 <b>${d.ad}</b></span>
+        <span style="font-size:11px;color:var(--muted);">${il?il.ad+' ili':''}</span>
+      </div>`;
+    });
+
+    dropdown.innerHTML = html;
+    dropdown.classList.add('active');
+
+    dropdown.querySelectorAll('.comp-drop-item').forEach(item=>{
+      item.addEventListener('click', ()=>{
+        if(item.dataset.val){
+          input.value = item.dataset.name;
+          setValCallback(item.dataset.val);
+          dropdown.classList.remove('active');
+          renderCompareTable();
+        }
+      });
+    });
+  };
+
+  input.addEventListener('input', ()=> renderDropdown(input.value));
+  input.addEventListener('focus', ()=> renderDropdown(input.value));
+
+  document.addEventListener('click', (e)=>{
+    if(!e.target.closest('#'+inputId) && !e.target.closest('#'+dropdownId)){
+      dropdown.classList.remove('active');
+    }
+  });
+}
 
 function populateCompareSelects(){
-  if(!compSelect1 || !compSelect2) return;
-  let html = '<option value="">Şehir veya ilçe seçin...</option>';
-  RAW.iller.forEach(c => html += `<option value="il_${c.id}">🏙️ ${c.ad} (İl)</option>`);
-  RAW.ilceler.forEach(d => html += `<option value="ilce_${d.id}">📍 ${d.ad} (İlçe)</option>`);
-  compSelect1.innerHTML = html;
-  compSelect2.innerHTML = html;
+  setupCompSearchInput('compSearch1', 'compDropdown1', (v)=> compValue1 = v);
+  setupCompSearchInput('compSearch2', 'compDropdown2', (v)=> compValue2 = v);
 }
 
 function renderCompareTable(){
-  const val1 = compSelect1.value;
-  const val2 = compSelect2.value;
   const container = document.getElementById('compareTableContainer');
-  if(!val1 || !val2 || !container){
-    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>';
+  if(!compValue1 || !compValue2 || !container){
+    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>';
     return;
   }
 
@@ -751,15 +802,15 @@ function renderCompareTable(){
     return type==='il' ? RAW.iller.find(i=>i.id==+id) : RAW.ilceler.find(d=>d.id==+id);
   };
 
-  const c1 = getItem(val1);
-  const c2 = getItem(val2);
+  const c1 = getItem(compValue1);
+  const c2 = getItem(compValue2);
   if(!c1 || !c2) return;
 
   const res1 = evalCity(c1);
   const res2 = evalCity(c2);
 
   container.innerHTML = `
-    <table class="compare-table">
+    <table class="compare-table" id="compareCanvasTable">
       <thead>
         <tr>
           <th>Özellik</th>
@@ -804,7 +855,7 @@ function renderCompareTable(){
           <td class="${(c2.emeklilik||6)>=(c1.emeklilik||6)?'winner':''}">${c2.emeklilik||6}/10</td>
         </tr>
         <tr>
-          <td class="feature">Yıllık Sıcaklık</td>
+          <td class="feature">Yıllık Ort. Sıcaklık</td>
           <td>${c1.yillik_sicaklik || '—'} °C</td>
           <td>${c2.yillik_sicaklik || '—'} °C</td>
         </tr>
@@ -812,11 +863,6 @@ function renderCompareTable(){
           <td class="feature">Deniz Kıyısı / Uzaklık</td>
           <td>${Number(c1.deniz)===1 ? 'Evet (Sahil)' : (c1.denizMesafe+' km')}</td>
           <td>${Number(c2.deniz)===1 ? 'Evet (Sahil)' : (c2.denizMesafe+' km')}</td>
-        </tr>
-        <tr>
-          <td class="feature">Rakım</td>
-          <td>${c1.rakim || 0} m</td>
-          <td>${c2.rakim || 0} m</td>
         </tr>
         <tr>
           <td class="feature">Deprem Riski</td>
@@ -828,8 +874,96 @@ function renderCompareTable(){
   `;
 }
 
-compSelect1?.addEventListener('change', renderCompareTable);
-compSelect2?.addEventListener('change', renderCompareTable);
+document.getElementById('btnDownloadCompareSS')?.addEventListener('click', ()=>{
+  if(!compValue1 || !compValue2){
+    alert('Lütfen önce kıyaslamak için 2 şehir seçin!');
+    return;
+  }
+  const getItem = (val)=>{
+    const [type, id] = val.split('_');
+    return type==='il' ? RAW.iller.find(i=>i.id==+id) : RAW.ilceler.find(d=>d.id==+id);
+  };
+  const c1 = getItem(compValue1);
+  const c2 = getItem(compValue2);
+  if(!c1 || !c2) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 900;
+  canvas.height = 600;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = '#60a5fa';
+  ctx.font = 'bold 24px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Yaşam Haritası — Şehir Karşılaştırma', 450, 45);
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '14px sans-serif';
+  ctx.fillText(`${c1.ad} vs ${c2.ad}`, 450, 75);
+
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(40, 100, 820, 440);
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(40, 100, 820, 440);
+
+  ctx.fillStyle = '#3b82f6';
+  ctx.fillRect(40, 100, 820, 40);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Özellik', 60, 126);
+  ctx.textAlign = 'center';
+  ctx.fillText(c1.ad, 450, 126);
+  ctx.fillText(c2.ad, 720, 126);
+
+  const res1 = evalCity(c1);
+  const res2 = evalCity(c2);
+
+  const rows = [
+    ['Uyum Skoru', `%${res1.score}`, `%${res2.score}`],
+    ['Ortalama Ev Kirası', `₺${((c1.kira||20)*1000).toLocaleString('tr-TR')} /ay`, `₺${((c2.kira||20)*1000).toLocaleString('tr-TR')} /ay`],
+    ['Sosyal İmkânlar', `${c1.sosyalImkan||6}/10`, `${c2.sosyalImkan||6}/10`],
+    ['Gece Hayatı & Eğlence', `${c1.eglence||5}/10`, `${c2.eglence||5}/10`],
+    ['Gençlik & Öğrenci', `${c1.genclik||6}/10`, `${c2.genclik||6}/10`],
+    ['Gastronomi / Mutfak', `${c1.gastro||7}/10`, `${c2.gastro||7}/10`],
+    ['Emeklilik & Huzur', `${c1.emeklilik||6}/10`, `${c2.emeklilik||6}/10`],
+    ['Yıllık Ort. Sıcaklık', `${c1.yillik_sicaklik || '—'} °C`, `${c2.yillik_sicaklik || '—'} °C`],
+    ['Deniz Kıyısı / Uzaklık', Number(c1.deniz)===1 ? 'Evet (Sahil)' : (c1.denizMesafe+' km'), Number(c2.deniz)===1 ? 'Evet (Sahil)' : (c2.denizMesafe+' km')],
+    ['Deprem Riski', `${c1.depremRiski||3}/5`, `${c2.depremRiski||3}/5`],
+  ];
+
+  rows.forEach((r, idx)=>{
+    const y = 168 + (idx * 37);
+    if(idx % 2 === 1){
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(40, y - 22, 820, 36);
+    }
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(r[0], 60, y);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(r[1], 450, y);
+    ctx.fillText(r[2], 720, y);
+  });
+
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('nexviastudio.com · Nexvia Digital Studio', 450, 570);
+
+  const link = document.createElement('a');
+  link.download = `kiyasla-${slugify(c1.ad)}-vs-${slugify(c2.ad)}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
 
 /* ============================================================
    VERİ YÜKLEME

@@ -387,20 +387,36 @@ body.light-theme .ic-moon{display:none;}
 .quiz-result-box h3 { font-size:26px; font-weight:800; color:var(--good); margin-bottom:6px; }
 .quiz-result-box p { font-size:14px; color:var(--muted); margin-bottom:18px; }
 
-.compare-card { max-width:720px; padding:26px; }
-.compare-card .sub { font-size:13px; color:var(--muted); margin-bottom:18px; }
-.compare-selectors { display:flex; gap:12px; align-items:center; margin-bottom:18px; }
-.comp-select {
-  flex:1; padding:11px 14px; background:var(--bg); border:1px solid var(--border);
-  border-radius:12px; color:var(--txt); font-size:14px; outline:none;
+.compare-card { max-width:840px; padding:24px; width:100%; box-sizing:border-box; }
+.compare-selectors { display:flex; gap:12px; align-items:center; margin-bottom:14px; position:relative; z-index:100; }
+.comp-search-box { flex:1; position:relative; }
+.comp-input {
+  width:100%; padding:10px 14px; background:var(--bg); border:1px solid var(--border);
+  border-radius:12px; color:var(--txt); font-size:13px; font-weight:700; outline:none; transition:.2s;
+  box-sizing:border-box;
 }
-.vs-badge { font-size:15px; font-weight:900; color:var(--accent2); }
+.comp-input:focus { border-color:var(--accent); box-shadow:0 0 0 2px rgba(59,130,246,0.25); }
 
-.compare-table-wrap { max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:12px; }
-.compare-table { width:100%; border-collapse:collapse; font-size:13px; }
-.compare-table th, .compare-table td { padding:12px 14px; border-bottom:1px solid var(--border); text-align:center; }
-.compare-table th { background:var(--panel2); font-weight:700; color:var(--muted); font-size:13px; }
-.compare-table td.feature { text-align:left; font-weight:700; color:var(--txt); background:var(--bg); }
+.comp-dropdown {
+  position:absolute; top:calc(100% + 4px); left:0; width:100%; background:var(--panel);
+  border:1px solid var(--border); border-radius:12px; max-height:220px; overflow-y:auto;
+  z-index:2000; box-shadow:0 8px 24px var(--shadow); display:none; box-sizing:border-box;
+}
+.comp-dropdown.active { display:block; }
+.comp-drop-item {
+  padding:10px 14px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--border);
+  display:flex; justify-content:space-between; align-items:center; color:var(--txt); transition:.15s;
+}
+.comp-drop-item:last-child { border-bottom:none; }
+.comp-drop-item:hover { background:var(--accent); color:#fff; }
+
+.compare-table-wrap {
+  max-height:none; overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--panel);
+}
+.compare-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.compare-table th, .compare-table td { padding:8px 12px; border-bottom:1px solid var(--border); text-align:center; }
+.compare-table th { background:var(--panel2); font-weight:800; color:var(--txt); font-size:13px; }
+.compare-table td.feature { text-align:left; font-weight:700; color:var(--muted); background:var(--bg); font-size:12.5px; width:34%; }
 .compare-table td.winner { color:var(--good); font-weight:800; }
 
 .share-card { max-width:460px; padding:22px; text-align:center; }

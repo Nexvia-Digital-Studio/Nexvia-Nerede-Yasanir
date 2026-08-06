@@ -189,17 +189,30 @@ require __DIR__ . '/lib/icons.php';
   </div>
 </div>
 
-<!-- ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI -->
+<!-- ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI (TAM SIĞAN & SS ALINABİLİR) -->
 <div class="about-backdrop" id="compareModal">
   <div class="about-card compare-card">
     <button class="about-close" id="compareClose" onclick="document.getElementById('compareModal').classList.remove('show')">&times;</button>
-    <h2><?= icon('activity', 18) ?> Şehir Karşılaştırma</h2>
-    <p class="sub">İki şehir veya ilçe seçerek değerlerini yan yana kıyaslayın.</p>
-    <div class="compare-selectors">
-      <select id="compSelect1" class="comp-select"><option value="">1. Şehri Seçin...</option></select>
-      <span class="vs-badge">VS</span>
-      <select id="compSelect2" class="comp-select"><option value="">2. Şehri Seçin...</option></select>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+      <div>
+        <h2 style="font-size:22px; font-weight:800; display:flex; align-items:center; gap:8px;"><?= icon('activity', 18) ?> Şehir & İlçe Karşılaştırma</h2>
+        <p class="sub" style="font-size:13px; color:var(--muted); margin:0;">2 yeri yan yana seçin, tek ekranda kıyaslayın ve SS alın.</p>
+      </div>
+      <button class="btn active" id="btnDownloadCompareSS" style="padding:7px 12px; font-size:12px; height:36px;"><?= icon('download', 14) ?> 📸 Tabloyu İndir (SS)</button>
     </div>
+
+    <div class="compare-selectors">
+      <div class="comp-search-box">
+        <input type="text" id="compSearch1" class="comp-input" placeholder="🔍 1. Şehir veya ilçe yazın..." autocomplete="off">
+        <div class="comp-dropdown" id="compDropdown1"></div>
+      </div>
+      <span class="vs-badge">VS</span>
+      <div class="comp-search-box">
+        <input type="text" id="compSearch2" class="comp-input" placeholder="🔍 2. Şehir veya ilçe yazın..." autocomplete="off">
+        <div class="comp-dropdown" id="compDropdown2"></div>
+      </div>
+    </div>
+
     <div id="compareTableContainer" class="compare-table-wrap">
       <div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>
     </div>
