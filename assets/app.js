@@ -931,18 +931,22 @@ document.getElementById('btnDownloadCompareSS')?.addEventListener('click', ()=>{
   const res1 = evalCity(c1);
   const res2 = evalCity(c2);
 
+  // [label, val1, val2, winner: 0=none, 1=c1 wins, 2=c2 wins, 3=both]
   const rows = [
-    ['Uyum Skoru', `%${res1.score}`, `%${res2.score}`],
-    ['Ortalama Ev Kirası', `₺${((c1.kira||20)*1000).toLocaleString('tr-TR')} /ay`, `₺${((c2.kira||20)*1000).toLocaleString('tr-TR')} /ay`],
-    ['Sosyal İmkânlar', `${c1.sosyalImkan||6}/10`, `${c2.sosyalImkan||6}/10`],
-    ['Gece Hayatı & Eğlence', `${c1.eglence||5}/10`, `${c2.eglence||5}/10`],
-    ['Gençlik & Öğrenci', `${c1.genclik||6}/10`, `${c2.genclik||6}/10`],
-    ['Gastronomi / Mutfak', `${c1.gastro||7}/10`, `${c2.gastro||7}/10`],
-    ['Emeklilik & Huzur', `${c1.emeklilik||6}/10`, `${c2.emeklilik||6}/10`],
-    ['Yıllık Ort. Sıcaklık', `${c1.yillik_sicaklik || '—'} °C`, `${c2.yillik_sicaklik || '—'} °C`],
-    ['Deniz Kıyısı / Uzaklık', Number(c1.deniz)===1 ? 'Evet (Sahil)' : (c1.denizMesafe+' km'), Number(c2.deniz)===1 ? 'Evet (Sahil)' : (c2.denizMesafe+' km')],
-    ['Deprem Riski', `${c1.depremRiski||3}/5`, `${c2.depremRiski||3}/5`],
+    ['Uyum Skoru', `%${res1.score}`, `%${res2.score}`, res1.score>res2.score?1 : res2.score>res1.score?2 : 3],
+    ['Ortalama Ev Kirası', `₺${((c1.kira||20)*1000).toLocaleString('tr-TR')} /ay`, `₺${((c2.kira||20)*1000).toLocaleString('tr-TR')} /ay`, (c1.kira||20)<(c2.kira||20)?1 : (c2.kira||20)<(c1.kira||20)?2 : 3],
+    ['Sosyal İmkânlar', `${c1.sosyalImkan||6}/10`, `${c2.sosyalImkan||6}/10`, (c1.sosyalImkan||6)>(c2.sosyalImkan||6)?1 : (c2.sosyalImkan||6)>(c1.sosyalImkan||6)?2 : 3],
+    ['Gece Hayatı & Eğlence', `${c1.eglence||5}/10`, `${c2.eglence||5}/10`, (c1.eglence||5)>(c2.eglence||5)?1 : (c2.eglence||5)>(c1.eglence||5)?2 : 3],
+    ['Gençlik & Öğrenci', `${c1.genclik||6}/10`, `${c2.genclik||6}/10`, (c1.genclik||6)>(c2.genclik||6)?1 : (c2.genclik||6)>(c1.genclik||6)?2 : 3],
+    ['Gastronomi / Mutfak', `${c1.gastro||7}/10`, `${c2.gastro||7}/10`, (c1.gastro||7)>(c2.gastro||7)?1 : (c2.gastro||7)>(c1.gastro||7)?2 : 3],
+    ['Emeklilik & Huzur', `${c1.emeklilik||6}/10`, `${c2.emeklilik||6}/10`, (c1.emeklilik||6)>(c2.emeklilik||6)?1 : (c2.emeklilik||6)>(c1.emeklilik||6)?2 : 3],
+    ['Yıllık Ort. Sıcaklık', `${c1.yillik_sicaklik || '—'} °C`, `${c2.yillik_sicaklik || '—'} °C`, 0],
+    ['Deniz Kıyısı / Uzaklık', Number(c1.deniz)===1 ? 'Evet (Sahil)' : (c1.denizMesafe+' km'), Number(c2.deniz)===1 ? 'Evet (Sahil)' : (c2.denizMesafe+' km'), 0],
+    ['Deprem Riski', `${c1.depremRiski||3}/5`, `${c2.depremRiski||3}/5`, (c1.depremRiski||3)<(c2.depremRiski||3)?1 : (c2.depremRiski||3)<(c1.depremRiski||3)?2 : 0],
   ];
+
+  const GREEN = '#4ade80';
+  const WHITE = '#ffffff';
 
   rows.forEach((r, idx)=>{
     const y = 168 + (idx * 37);
@@ -955,10 +959,11 @@ document.getElementById('btnDownloadCompareSS')?.addEventListener('click', ()=>{
     ctx.textAlign = 'left';
     ctx.fillText(r[0], 60, y);
 
-    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
+    ctx.fillStyle = (r[3]===1 || r[3]===3) ? GREEN : WHITE;
     ctx.fillText(r[1], 450, y);
+    ctx.fillStyle = (r[3]===2 || r[3]===3) ? GREEN : WHITE;
     ctx.fillText(r[2], 720, y);
   });
 
@@ -1635,21 +1640,22 @@ function popupHtml(c, res, type){
 
 function openCity(c, type){
   if(compareSelection1 && (compareSelection1.id !== c.id || compareSelection1.type !== type)){
-    const item1Val = `${compareSelection1.type}_${compareSelection1.id}`;
+    const sel1Type = compareSelection1.type;
+    const item1Val = `${sel1Type}_${compareSelection1.id}`;
     const item2Val = `${type}_${c.id}`;
 
-    const item1 = compareSelection1.type === 'il' ? RAW.iller.find(i=>i.id===compareSelection1.id) : RAW.ilceler.find(d=>d.id===compareSelection1.id);
+    const item1 = sel1Type === 'il' ? RAW.iller.find(i=>i.id===compareSelection1.id) : RAW.ilceler.find(d=>d.id===compareSelection1.id);
     const item2 = c;
 
     window.appCancelMapCompare();
 
-    populateCompareSelects();
     compValue1 = item1Val;
     compValue2 = item2Val;
+    populateCompareSelects();
 
     const s1 = document.getElementById('compSearch1');
     const s2 = document.getElementById('compSearch2');
-    if(s1 && item1) s1.value = `${item1.ad} (${compareSelection1.type==='il'?'İl':'İlçe'})`;
+    if(s1 && item1) s1.value = `${item1.ad} (${sel1Type==='il'?'İl':'İlçe'})`;
     if(s2 && item2) s2.value = `${item2.ad} (${type==='il'?'İl':'İlçe'})`;
 
     renderCompareTable();
