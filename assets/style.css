@@ -412,6 +412,7 @@ body.light-theme .ic-moon{display:none;}
 
 .compare-table-wrap {
   max-height:none; overflow:visible; border:1px solid var(--border); border-radius:14px; background:var(--panel);
+  min-height:380px;
 }
 .compare-table { width:100%; border-collapse:collapse; font-size:12.5px; }
 .compare-table th, .compare-table td { padding:8px 12px; border-bottom:1px solid var(--border); text-align:center; }

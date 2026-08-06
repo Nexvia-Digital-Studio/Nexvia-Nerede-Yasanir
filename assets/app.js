@@ -793,7 +793,15 @@ function populateCompareSelects(){
 function renderCompareTable(){
   const container = document.getElementById('compareTableContainer');
   if(!compValue1 || !compValue2 || !container){
-    container.innerHTML = '<div style="text-align:center; color:var(--muted); padding:30px;">Kıyaslamak için yukarıdan 2 şehir seçin veya haritada Karşılaştır butonunu kullanın</div>';
+    container.innerHTML = `<div style="text-align:center; color:var(--muted); padding:50px 30px; min-height:360px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;">
+      <div style="font-size:52px; opacity:0.4;">⚖️</div>
+      <h3 style="font-size:18px; font-weight:800; color:var(--txt); margin:0;">İki Şehri Yan Yana Kıyaslayın</h3>
+      <p style="font-size:13px; max-width:340px; line-height:1.6; margin:0;">Yukarıdaki arama kutularına şehir veya ilçe adı yazarak 2 yer seçin.<br>Ya da haritadaki bir şehrin pop-up'ından <b style="color:var(--accent2);">⚖️ Karşılaştır</b> butonuna basıp başka bir şehre tıklayın.</p>
+      <div style="display:flex; gap:24px; margin-top:8px; font-size:12px; font-weight:700;">
+        <span style="display:flex; align-items:center; gap:6px; color:var(--accent);">① Arama ile seçin</span>
+        <span style="display:flex; align-items:center; gap:6px; color:var(--accent2);">② Haritadan tıklayın</span>
+      </div>
+    </div>`;
     return;
   }
 
@@ -1630,11 +1638,19 @@ function openCity(c, type){
     const item1Val = `${compareSelection1.type}_${compareSelection1.id}`;
     const item2Val = `${type}_${c.id}`;
 
+    const item1 = compareSelection1.type === 'il' ? RAW.iller.find(i=>i.id===compareSelection1.id) : RAW.ilceler.find(d=>d.id===compareSelection1.id);
+    const item2 = c;
+
     window.appCancelMapCompare();
 
     populateCompareSelects();
-    if(compSelect1) compSelect1.value = item1Val;
-    if(compSelect2) compSelect2.value = item2Val;
+    compValue1 = item1Val;
+    compValue2 = item2Val;
+
+    const s1 = document.getElementById('compSearch1');
+    const s2 = document.getElementById('compSearch2');
+    if(s1 && item1) s1.value = `${item1.ad} (${compareSelection1.type==='il'?'İl':'İlçe'})`;
+    if(s2 && item2) s2.value = `${item2.ad} (${type==='il'?'İl':'İlçe'})`;
 
     renderCompareTable();
     compareModal?.classList.add('show');
