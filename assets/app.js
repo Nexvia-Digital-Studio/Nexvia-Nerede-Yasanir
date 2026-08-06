@@ -1,6 +1,6 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Nüfus Düzeltmesi, Favoriler Harita Modu Tamiri, 4K Şehir Fotoğraflı Story, Tıklamalı Karşılaştırma)
+   (Kusursuz Bottleneck Puanlama, Denize Uzaklık km Filtresi, Hard Constraints)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
@@ -53,14 +53,14 @@ function slugify(text) {
 }
 
 /* ============================================================
-   FİLTRE TANIMLARI
+   FİLTRE TANIMLARI (DENİZE UZAKLIK KM FİLTRESİ DAHİL)
    ============================================================ */
 const FILTERS = [
   {grp:'Coğrafi', icon:'globe', open:true, items:[
     {key:'deniz', label:'Deniz kenarı', ic:'waves', type:'tri', opts:['farketmez','evet','hayır']},
+    {key:'denizMesafe', label:'Denize uzaklık', ic:'waves', type:'range', min:0, max:400, step:10, unit:'km', lower:true, note:'Kıyıya olan kuş uçuşu mesafe'},
     {key:'rakim', label:'Rakım', ic:'mountain', type:'range', min:0, max:2000, step:50, unit:'m'},
-    {key:'daglik', label:'Dağlık/arazi', ic:'mountain', type:'range', min:0, max:10, step:1, unit:'/10',
-      note:'Rakım + engebe tahmini (rakımdan türetilir)'},
+    {key:'daglik', label:'Dağlık/arazi', ic:'mountain', type:'range', min:0, max:10, step:1, unit:'/10', note:'Rakım + engebe tahmini (rakımdan türetilir)'},
   ]},
   {grp:'İklim', icon:'thermometer', open:true, items:[
     {key:'yillik_sicaklik', label:'Yıllık ort. sıcaklık', ic:'thermometer', type:'range', min:4, max:22, step:0.5, unit:'°C'},
@@ -74,18 +74,13 @@ const FILTERS = [
     {key:'nufus', label:'Nüfus (il)', ic:'users', type:'range', min:80, max:16000, step:80, unit:'bin', log:true},
   ]},
   {grp:'Yaşam Kalitesi', icon:'building', open:false, items:[
-    {key:'ulasim', label:'Ulaşım / altyapı', ic:'navigation', type:'range', min:0, max:10, step:1, unit:'/10',
-      note:'Nüfus ve bölge merkezîyetinden türetilir'},
-    {key:'internet', label:'İnternet hızı (tahmini)', ic:'wifi', type:'range', min:20, max:100, step:5, unit:'Mbps',
-      note:'Nüfus yoğunluğundan tahmini'},
+    {key:'ulasim', label:'Ulaşım / altyapı', ic:'navigation', type:'range', min:0, max:10, step:1, unit:'/10', note:'Nüfus ve bölge merkezîyetinden türetilir'},
+    {key:'internet', label:'İnternet hızı (tahmini)', ic:'wifi', type:'range', min:20, max:100, step:5, unit:'Mbps', note:'Nüfus yoğunluğundan tahmini'},
   ]},
   {grp:'Riskler (düşük iyi)', icon:'alert', open:false, items:[
-    {key:'depremRiski', label:'Deprem riski', ic:'activity', type:'range', min:0, max:5, step:1, unit:'/5', lower:true,
-      note:'AFAD haritasından il bazlı yaklaşıktır'},
-    {key:'nem', label:'Nem oranı (canlı)', ic:'droplet', type:'range', min:40, max:90, step:1, unit:'%', lower:true,
-      note:'Open-Meteo canlı veri — popup açınca güncellenir'},
-    {key:'aqi', label:'Hava kirliliği (canlı AQI)', ic:'wind', type:'range', min:0, max:100, step:5, unit:'AQI', lower:true,
-      note:'European AQI — popup açınca güncellenir'},
+    {key:'depremRiski', label:'Deprem riski', ic:'activity', type:'range', min:0, max:5, step:1, unit:'/5', lower:true, note:'AFAD haritasından il bazlı yaklaşıktır'},
+    {key:'nem', label:'Nem oranı (canlı)', ic:'droplet', type:'range', min:40, max:90, step:1, unit:'%', lower:true, note:'Open-Meteo canlı veri — popup açınca güncellenir'},
+    {key:'aqi', label:'Hava kirliliği (canlı AQI)', ic:'wind', type:'range', min:0, max:100, step:5, unit:'AQI', lower:true, note:'European AQI — popup açınca güncellenir'},
   ]},
   {grp:'Bölge', icon:'compass', open:false, items:[
     {key:'bolge', label:'Bölgeler', ic:'compass', type:'checks', opts:['Marmara','Ege','Akdeniz','İç Anadolu','Karadeniz','Doğu Anadolu','Güneydoğu']}
@@ -98,10 +93,10 @@ const FILTERS = [
 let RAW = {iller:[], ilceler:[], meta:{}};
 let state = {};
 let strictMode = true;
-let layerMode = 'auto';     // 'auto' | 'il' | 'ilce'
-let favOnlyMode = false;    // Sadece favorileri haritada göster modu
-let compareSelection1 = null; // Harita üzerinden tıklamalı karşılaştırma 1. şehir
-let labelMode = localStorage.getItem('yh_label') || 'full'; // 'full' | 'compact'
+let layerMode = 'auto';
+let favOnlyMode = false;
+let compareSelection1 = null;
+let labelMode = localStorage.getItem('yh_label') || 'full';
 let currentTheme = localStorage.getItem('yh_theme') || 'dark';
 
 let favorites = new Set(JSON.parse(localStorage.getItem('yh_favs') || '[]'));
@@ -113,8 +108,8 @@ function saveFavs(){
 }
 saveFavs();
 
-const markersIl = {};     // id → marker
-const markersIlce = {};   // id → marker
+const markersIl = {};
+const markersIlce = {};
 
 /* ============================================================
    WINDOW GLOBAL HELPER FUNCTIONS
@@ -141,7 +136,6 @@ window.appToggleFavMode = function(){
   }
 };
 
-// Tıklamalı Harita Karşılaştırma Başlatma
 window.appStartMapCompare = function(id, type){
   const item = type==='il' ? RAW.iller.find(i=>i.id===id) : RAW.ilceler.find(d=>d.id===id);
   if(!item) return;
@@ -176,7 +170,7 @@ window.appCopyLink = function(cityName){
 };
 
 /* ============================================================
-   TEMA (AÇIK / KARANLIK MOD) & TILE LAYERS
+   TEMA & TILE LAYERS
    ============================================================ */
 const darkTileUrl = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const lightTileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
@@ -198,7 +192,6 @@ document.getElementById('btnThemeToggle').addEventListener('click', ()=>{
   setTheme(currentTheme==='dark'?'light':'dark');
 });
 
-/* Etiket modu toggle */
 function setLabelMode(mode){
   labelMode = mode;
   localStorage.setItem('yh_label', mode);
@@ -315,7 +308,7 @@ document.getElementById('inviteClose')?.addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   KAPATILABİLİR POP-UP (INTERSTITIAL) REKLAM MANTIĞI
+   KAPATILABİLİR POP-UP REKLAM MANTIĞI
    ============================================================ */
 const adModalBackdrop = document.getElementById('adModalBackdrop');
 let hasShownAd = false;
@@ -347,7 +340,7 @@ const QUIZ_QUESTIONS = [
     title: "1. Nasıl bir doğa ve ortam hayal ediyorsun?",
     subtitle: "Sabah pencereyi açtığında gözünün önünde ne olsun?",
     options: [
-      { ic: "waves", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1 } },
+      { ic: "waves", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1, denizMesafe: [0, 15] } },
       { ic: "mountain", label: "Yüksek Dağlar & Çam Kokulu Ormanlar", set: { rakim: [400, 2000] } },
       { ic: "building", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10] } },
       { ic: "compass", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500] } }
@@ -531,7 +524,6 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
 const shareModal = document.getElementById('shareModal');
 const shareCanvas = document.getElementById('shareCanvas');
 
-// Bölge ve İllere Özel 4K Gerçek Türkiye Görselleri
 const CITY_PHOTOS = {
   'mugla': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&q=80',
   'izmir': 'https://images.unsplash.com/photo-1589139832322-a795764049fa?auto=format&fit=crop&w=1080&q=80',
@@ -543,7 +535,6 @@ const CITY_PHOTOS = {
   'bursa': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1080&q=80',
   'ankara': 'https://images.unsplash.com/photo-1477959858617-67f30ac72604?auto=format&fit=crop&w=1080&q=80',
   
-  // Bölgelere özel gerçek görseller
   'ege': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&q=80',
   'akdeniz': 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1080&q=80',
   'karadeniz': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80',
@@ -556,7 +547,7 @@ const CITY_PHOTOS = {
 function getCityPhotoUrl(city){
   const slug = slugify(city.ad);
   if(CITY_PHOTOS[slug]) return CITY_PHOTOS[slug];
-  if(city.deniz) return CITY_PHOTOS['ege'];
+  if(Number(city.deniz) === 1) return CITY_PHOTOS['ege'];
   
   const bolgeSlug = slugify(city.bolge || '');
   if(CITY_PHOTOS[bolgeSlug]) return CITY_PHOTOS[bolgeSlug];
@@ -578,10 +569,8 @@ function openShareModal(city, score){
   img.crossOrigin = 'anonymous';
 
   const renderCanvasContent = () => {
-    // Fotoğraf Arka Planı
     ctx.drawImage(img, 0, 0, w, h);
 
-    // Koyu Gradyan Filtre Katmanı (Okunabilirlik için)
     const grad = ctx.createLinearGradient(0, 0, 0, h);
     grad.addColorStop(0, 'rgba(15, 23, 42, 0.78)');
     grad.addColorStop(0.4, 'rgba(15, 23, 42, 0.58)');
@@ -589,7 +578,6 @@ function openShareModal(city, score){
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // Üst Başlık / Logo
     ctx.fillStyle = '#60a5fa';
     ctx.font = 'bold 22px sans-serif';
     ctx.textAlign = 'center';
@@ -599,7 +587,6 @@ function openShareModal(city, score){
     ctx.font = '14px sans-serif';
     ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 100);
 
-    // Rozet Çemberi
     const isIlce = !!city.il_id;
     const ilName = isIlce ? (RAW.iller.find(i=>i.id===city.il_id)?.ad || '') : '';
     const name = isIlce ? `${city.ad}` : city.ad;
@@ -613,7 +600,6 @@ function openShareModal(city, score){
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // Uyum Skoru
     ctx.fillStyle = '#22c55e';
     ctx.font = 'bold 54px sans-serif';
     ctx.fillText(`%${score}`, w/2, 260);
@@ -621,7 +607,6 @@ function openShareModal(city, score){
     ctx.font = 'bold 15px sans-serif';
     ctx.fillText('UYUM SKORU', w/2, 300);
 
-    // Şehir Adı
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 36px sans-serif';
     ctx.shadowColor = 'rgba(0,0,0,0.8)';
@@ -632,9 +617,8 @@ function openShareModal(city, score){
     ctx.font = '18px sans-serif';
     ctx.fillText(subName, w/2, 485);
 
-    ctx.shadowBlur = 0; // Sıfırla
+    ctx.shadowBlur = 0;
 
-    // Özellik Detay Kutusu (Cam Efekti)
     ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
     if (ctx.roundRect) ctx.roundRect(40, 530, w - 80, 240, 16); else ctx.fillRect(40, 530, w - 80, 240);
     ctx.fill();
@@ -648,7 +632,7 @@ function openShareModal(city, score){
 
     const stats = [
       `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
-      `Deniz Konumu: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
+      `Deniz Konumu: ${Number(city.deniz)===1 ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
       `Rakım / Yükseklik: ${city.rakim || 0} m`,
       `Canlı Hava (AQI): ${city.aqi || 25} AQI`,
       `Canlı Nem Oranı: %${city.nem || 60}`
@@ -658,7 +642,6 @@ function openShareModal(city, score){
       ctx.fillText(s, 65, 570 + (idx * 40));
     });
 
-    // Footer Alt Yazı (Nexvia Studio)
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
@@ -743,9 +726,9 @@ function renderCompareTable(){
           <td>${c2.yillik_sicaklik || '—'} °C</td>
         </tr>
         <tr>
-          <td class="feature">Deniz Kıyısı</td>
-          <td>${c1.deniz ? 'Evet' : 'Hayır'}</td>
-          <td>${c2.deniz ? 'Evet' : 'Hayır'}</td>
+          <td class="feature">Deniz Kıyısı / Uzaklık</td>
+          <td>${Number(c1.deniz)===1 ? 'Evet (Sahil)' : (c1.denizMesafe+' km')}</td>
+          <td>${Number(c2.deniz)===1 ? 'Evet (Sahil)' : (c2.denizMesafe+' km')}</td>
         </tr>
         <tr>
           <td class="feature">Rakım</td>
@@ -843,7 +826,7 @@ function initDerived(){
     c.daglik = c.rakim!=null ? Math.min(10, Math.round(c.rakim/200)) : null;
     c.denizMesafe = denizMesafe(c.lat, c.lng);
     if (c.deniz === 1 && c.denizMesafe > 15) c.denizMesafe = 5;
-    c.deniz = c.deniz !== undefined ? c.deniz : (c.denizMesafe <= 15 ? 1 : 0);
+    c.deniz = Number(c.deniz !== undefined ? c.deniz : (c.denizMesafe <= 15 ? 1 : 0));
     if (c.canli) { c.nem = c.canli.nem; c.aqi = c.canli.aqi; }
     const nScore = Math.min(8, Math.log10(c.nufus/1000+1)*2.2);
     c.ulasim = Math.round(Math.min(10, nScore + (c.deniz?1.2:0)));
@@ -856,7 +839,7 @@ function initDerived(){
     d.depremRiski = il.depremRiski || 3;
     d.daglik = d.rakim!=null ? Math.min(10, Math.round(d.rakim/200)) : null;
     d.denizMesafe = denizMesafe(d.lat, d.lng);
-    d.deniz = d.deniz !== undefined ? d.deniz : (d.denizMesafe <= 15 ? 1 : 0);
+    d.deniz = Number(d.deniz !== undefined ? d.deniz : (d.denizMesafe <= 15 ? 1 : 0));
     if (d.deniz === 1 && d.denizMesafe > 15) d.denizMesafe = 3;
     if (d.canli) { d.nem = d.canli.nem; d.aqi = d.canli.aqi; }
     d.ulasim = il.ulasim || 5;
@@ -870,7 +853,6 @@ function initDerived(){
    FİLTRE UI KURULUMU
    ============================================================ */
 
-// KUSURSUZ TÜRKÇE NÜFUS VE SARI-SAYI BİÇİMLENDİRME (Afyonkarahisar -> 736.9 Bin)
 function fmtNum(v, unit){
   if(unit==='bin'){
     if(v >= 1000000) return (v / 1000000).toFixed(1) + ' Milyon';
@@ -993,6 +975,7 @@ function wirePresets(){
 
       if(p === 'sea_summer'){
         setTriVal('deniz', 1);
+        setRangeVal('denizMesafe', 0, 15);
         setRangeVal('yaz_sicaklik', 25, 35);
       } else if(p === 'nature_cool'){
         setRangeVal('rakim', 400, 2000);
@@ -1056,14 +1039,16 @@ function wireFilters(){
 }
 
 /* ============================================================
-   SERT FİLTRE ELEME MANTIĞI (HARD CONSTRAINTS) & SÜREKLİ SKORLAMA
+   SERT FİLTRE ELEME & DARBOĞAZLI (BOTTLENECK) KUSURSUZ PUANLAMA
    ============================================================ */
 function evalCity(c){
+  const cityDeniz = Number(c.deniz);
+
   // HARD CONSTRAINT #1: Deniz Kenarı Kesin Şartı
-  if (state['deniz'] === 1 && c.deniz !== 1) {
+  if (state['deniz'] === 1 && cityDeniz !== 1) {
     return { score: 0, passed: 0, activeFilters: 1, eligible: false, reasons: ['Deniz kenarı değil'] };
   }
-  if (state['deniz'] === 2 && c.deniz === 1) {
+  if (state['deniz'] === 2 && cityDeniz === 1) {
     return { score: 0, passed: 0, activeFilters: 1, eligible: false, reasons: ['Deniz kenarı'] };
   }
 
@@ -1074,6 +1059,7 @@ function evalCity(c){
 
   let activeFilters = 0;
   let totalRatio = 0;
+  let minRatio = 1.0; // Darboğaz (Bottleneck) için en düşük uyum oranı
   const reasons = [];
 
   FILTERS.forEach(g=>g.items.forEach(f=>{
@@ -1086,43 +1072,51 @@ function evalCity(c){
       if(isDef) return;
       activeFilters++;
 
+      let ratio = 1.0;
       if(v >= st.min && v <= st.max){
-        totalRatio += 1.0;
+        ratio = 1.0;
       } else {
         const span = Math.max(1, f.max - f.min);
         const diff = v < st.min ? (st.min - v) : (v - st.max);
-        const penalty = Math.min(1, diff / (span * 0.20));
-        const ratio = Math.max(0, 1 - penalty);
-        totalRatio += ratio;
+        const penalty = Math.min(1, diff / (span * 0.15));
+        ratio = Math.max(0, 1 - penalty);
         if(ratio < 0.7) reasons.push(f.label);
       }
+      totalRatio += ratio;
+      if(ratio < minRatio) minRatio = ratio;
+
     } else if(f.type==='tri'){
       if(f.key==='deniz') return;
       if(state[f.key]===0) return;
       activeFilters++;
       const want = state[f.key]===1?1:0;
-      if(c[f.key]===want){
-        totalRatio += 1.0;
-      } else {
-        totalRatio += 0.0;
-        reasons.push(f.label);
-      }
+      const ratio = (cityDeniz === want) ? 1.0 : 0.0;
+      if(ratio < 0.7) reasons.push(f.label);
+      totalRatio += ratio;
+      if(ratio < minRatio) minRatio = ratio;
+
     } else if(f.type==='checks'){
       if(f.key==='bolge') return;
       const st=state[f.key];
       if(st.size===f.opts.length) return;
       activeFilters++;
-      if(st.has(c[f.key])){
-        totalRatio += 1.0;
-      } else {
-        totalRatio += 0.0;
-        reasons.push(f.label);
-      }
+      const ratio = st.has(c[f.key]) ? 1.0 : 0.0;
+      if(ratio < 0.7) reasons.push(f.label);
+      totalRatio += ratio;
+      if(ratio < minRatio) minRatio = ratio;
     }
   }));
 
-  const score = activeFilters===0 ? 100 : Math.round((totalRatio / activeFilters) * 100);
-  const eligible = activeFilters===0 ? true : (score >= 70);
+  if (activeFilters === 0) {
+    return { score: 100, passed: 0, activeFilters: 0, eligible: true, reasons: [] };
+  }
+
+  const avgRatio = totalRatio / activeFilters;
+  // BOTTLENECK CEZASI: En düşük kriter uyumu ortalamayı doğrudan baskılar (Suni puan yükselmesini önler)
+  const weightedRatio = avgRatio * Math.pow(minRatio, 0.45);
+  const score = Math.round(weightedRatio * 100);
+  const eligible = (score >= 70 && minRatio >= 0.35);
+
   return {score, passed: Math.round(totalRatio), activeFilters, eligible, reasons};
 }
 
@@ -1136,7 +1130,7 @@ function colorFor(score, eligible, isFav){
 }
 
 /* ============================================================
-   HARİTA MARKER RENDERİ (Dengeli 14px Şehir / 10px İlçe)
+   HARİTA MARKER RENDERİ
    ============================================================ */
 const layerIl = L.layerGroup().addTo(map);
 const layerIlce = L.layerGroup().addTo(map);
@@ -1281,7 +1275,6 @@ function updateLayers(){
     if(map.hasLayer(layerIlce)) map.removeLayer(layerIlce);
   }
 
-  // Eğer Favoriler modu kapatıldıysa ve normaller gizliyse geri yükle
   if (!favOnlyMode && showIl) {
     RAW.iller.forEach(c => {
       const mk = markersIl[c.id];
@@ -1303,7 +1296,7 @@ document.getElementById('layerToggle').addEventListener('click', function(e){
 });
 
 /* ============================================================
-   POPUP (TIKLAMALI KARŞILAŞTIRMA BUTONU DAHİL)
+   POPUP
    ============================================================ */
 function popupHtml(c, res, type){
   const isFav = favorites.has(`${type}_${c.id}`);
@@ -1317,8 +1310,8 @@ function popupHtml(c, res, type){
   const grid = [
     ['Nüfus', c.nufus? fmtNum(c.nufus,'bin') : '—', 'users'],
     ['Rakım', c.rakim!=null? c.rakim+' m' : '—', 'mountain'],
-    ['Deniz', c.deniz? 'Evet' : 'Hayır', 'waves'],
-    ['Dağlık', c.daglik!=null? c.daglik+'/10' : '—', 'mountain'],
+    ['Deniz', Number(c.deniz)===1? 'Evet' : 'Hayır', 'waves'],
+    ['Denize uzk.', c.denizMesafe!=null? (c.denizMesafe+' km') : '—', 'waves'],
     ['Yıllık sıc.', c.yillik_sicaklik!=null? c.yillik_sicaklik+' °C' : '—', 'thermometer'],
     ['Kış / Yaz', (c.kis_sicaklik!=null?c.kis_sicaklik:'?')+'° / '+(c.yaz_sicaklik!=null?c.yaz_sicaklik+'°':'?'), 'thermometer'],
     ['Yağış', c.yillik_yagis!=null? c.yillik_yagis+' mm' : '—', 'cloud-rain'],
@@ -1349,7 +1342,6 @@ function popupHtml(c, res, type){
 }
 
 function openCity(c, type){
-  // TIKLAMALI HARİTA KARŞILAŞTIRMA KONTROLÜ
   if(compareSelection1 && (compareSelection1.id !== c.id || compareSelection1.type !== type)){
     const item1Val = `${compareSelection1.type}_${compareSelection1.id}`;
     const item2Val = `${type}_${c.id}`;
@@ -1415,7 +1407,6 @@ function update(){
 
   let matchCount=0, bestCount=0;
 
-  // iller
   RAW.iller.forEach(c=>{
     const res=evalCity(c);
     const mk=markersIl[c.id];
@@ -1426,7 +1417,6 @@ function update(){
     if(res.eligible && res.score>=85) bestCount++;
   });
 
-  // ilçeler
   const ilceVisible = layerMode==='ilce' || (layerMode==='auto' && map.getZoom()>=9.5);
   if(ilceVisible && ilceRendered){
     RAW.ilceler.forEach(d=>{
@@ -1446,7 +1436,7 @@ function update(){
 }
 
 /* ============================================================
-   CANLI İL VE İLÇE ARAMA (AKILLI STARTSWITH SIRALAMASI VE DÜZGÜN ARAYÜZ)
+   CANLI İL VE İLÇE ARAMA
    ============================================================ */
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
