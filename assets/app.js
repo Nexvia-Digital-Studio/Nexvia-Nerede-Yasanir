@@ -492,10 +492,12 @@ function calculateQuizResult(){
   }
 }
 
-/* ============================================================
-   2. 🎲 "BENİ ŞAŞIRT!" (FİLTRELERE GÖRE DİNAMİK SÜRPRİZ GARANTİSİ)
-   ============================================================ */
+let lastSurpriseClickTime = 0;
 document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
+  const now = Date.now();
+  if(now - lastSurpriseClickTime < 350) return; // 350ms anti-spam kilidi
+  lastSurpriseClickTime = now;
+
   let validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
   if(validList.length === 0){
     const scored = [...RAW.iller, ...RAW.ilceler].map(c=> ({ city: c, res: evalCity(c) }));
@@ -1523,12 +1525,32 @@ function openCity(c, type){
   refreshLive(c, type);
 }
 
+const LIVE_CACHE = {};
+let activeRefreshFetchController = null;
+
 async function refreshLive(c, type){
+  const cacheKey = `${type}_${c.id}`;
+  const now = Date.now();
+
+  if(LIVE_CACHE[cacheKey] && (now - LIVE_CACHE[cacheKey].ts < 600000)){
+    const d = LIVE_CACHE[cacheKey].data;
+    c.canli = { nem:d.nem, aqi:d.aqi, pm25:d.pm25, age_h: Math.round((now/1000 - (d.ts||now/1000))/3600) };
+    c.nem = d.nem;
+    c.aqi = d.aqi;
+    return;
+  }
+
+  if(activeRefreshFetchController){
+    try { activeRefreshFetchController.abort(); } catch(err){}
+  }
+  activeRefreshFetchController = new AbortController();
+
   try {
-    const res = await fetch(`api/refresh.php?type=${type}&id=${c.id}`);
+    const res = await fetch(`api/refresh.php?type=${type}&id=${c.id}`, { signal: activeRefreshFetchController.signal });
     const d = await res.json();
     if(d.nem!=null){
-      c.canli = { nem:d.nem, aqi:d.aqi, pm25:d.pm25, age_h: Math.round((Date.now()/1000 - d.ts)/3600) };
+      LIVE_CACHE[cacheKey] = { ts: now, data: d };
+      c.canli = { nem:d.nem, aqi:d.aqi, pm25:d.pm25, age_h: Math.round((now/1000 - (d.ts||now/1000))/3600) };
       c.nem = d.nem;
       c.aqi = d.aqi;
       update();
@@ -1538,7 +1560,9 @@ async function refreshLive(c, type){
         mk.setPopupContent(popupHtml(c,res2,type));
       }
     }
-  } catch(e){}
+  } catch(e){
+    if(e.name === 'AbortError') return;
+  }
 }
 
 /* ============================================================
