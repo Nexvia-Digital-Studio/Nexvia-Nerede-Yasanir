@@ -34,7 +34,7 @@ require __DIR__ . '/lib/icons.php';
           </button>
         </div>
       </div>
-      <p>Türkiye'de nerede yaşamalısın? <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="nexvia-tag">⚡ Nexvia Digital Studio</a></p>
+      <p>Türkiye'de nerede yaşamalısın? <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="nexvia-tag"><?= icon('zap', 12) ?> Nexvia Digital Studio</a></p>
       
       <!-- Hızlı Arama -->
       <div class="search-box">
@@ -44,21 +44,21 @@ require __DIR__ . '/lib/icons.php';
         <div id="searchResults" class="search-results"></div>
       </div>
 
-      <!-- Eğlenceli İnteraktif Aksiyon Butonları -->
+      <!-- İnteraktif Aksiyon Butonları (SVG İkonlu) -->
       <div class="interactive-bar">
-        <button class="action-btn quiz-btn" id="btnStartQuiz">🔮 Ruh Şehrini Bul</button>
-        <button class="action-btn surprise-btn" id="btnSurprise">🎲 Beni Şaşırt!</button>
-        <button class="action-btn fav-btn" id="btnShowFavs">❤️ Favoriler (<span id="favCount">0</span>)</button>
+        <button class="action-btn quiz-btn" id="btnStartQuiz"><?= icon('compass', 14) ?> Ruh Şehrini Bul</button>
+        <button class="action-btn surprise-btn" id="btnSurprise"><?= icon('rotate', 14) ?> Beni Şaşırt!</button>
+        <button class="action-btn fav-btn" id="btnShowFavs"><?= icon('shield', 14) ?> Favoriler (<span id="favCount">0</span>)</button>
       </div>
 
       <!-- Hazır Yaşam Tarzı Filtreleri -->
       <div class="preset-chips">
         <span class="preset-title">Hızlı Filtreler:</span>
         <div class="chips-row">
-          <button class="chip-btn" data-preset="sea_summer">🌊 Kıyı & Yaz</button>
-          <button class="chip-btn" data-preset="nature_cool">🏔️ Dağ & Doğa</button>
-          <button class="chip-btn" data-preset="metropolis">💼 Metropol</button>
-          <button class="chip-btn" data-preset="peace_safety">🛡️ Huzurlu</button>
+          <button class="chip-btn" data-preset="sea_summer"><?= icon('waves', 13) ?> Kıyı & Yaz</button>
+          <button class="chip-btn" data-preset="nature_cool"><?= icon('mountain', 13) ?> Dağ & Doğa</button>
+          <button class="chip-btn" data-preset="metropolis"><?= icon('building', 13) ?> Metropol</button>
+          <button class="chip-btn" data-preset="peace_safety"><?= icon('shield', 13) ?> Huzurlu</button>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ require __DIR__ . '/lib/icons.php';
     </div>
 
     <div class="sb-footer">
-      <span>Geliştirici: <b>Batuhan Akcan</b> · 🚀 <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" style="color:var(--accent2);font-weight:700;text-decoration:none;">Nexvia Digital Studio</a></span>
+      <span>Geliştirici: <b>Batuhan Akcan</b> · <?= icon('zap', 12) ?> <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" style="color:var(--accent2);font-weight:700;text-decoration:none;">Nexvia Digital Studio</a></span>
     </div>
   </aside>
 
@@ -107,7 +107,7 @@ require __DIR__ . '/lib/icons.php';
 
   <!-- Davet Karşılama Bildirim Bandı -->
   <div class="invite-banner" id="inviteBanner">
-    <span class="invite-text" id="inviteText">✨ Bir arkadaşın sana özel yaşam alanı önerdi!</span>
+    <span class="invite-text" id="inviteText"><?= icon('zap', 14) ?> Bir arkadaşın sana özel yaşam alanı önerdi!</span>
     <button class="invite-close" id="inviteClose">&times;</button>
   </div>
 
@@ -149,13 +149,13 @@ require __DIR__ . '/lib/icons.php';
 
 <!-- ============================================================
    MODALLAR
-   ============================================================ -->
+   ============================================================ */ -->
 
-<!-- ❤️ FAVORİLERİM MODALI -->
+<!-- FAVORİLERİM MODALI -->
 <div class="about-backdrop" id="favsModal">
   <div class="about-card favs-card">
     <button class="about-close" id="favsClose">&times;</button>
-    <h2>❤️ Kaydedilen Favori Yerleriniz</h2>
+    <h2><?= icon('shield', 18) ?> Kaydedilen Favori Yerleriniz</h2>
     <p class="sub">Beğendiğiniz il ve ilçeler listesi.</p>
     <div id="favsListContainer" class="favs-list-wrap">
       <div style="text-align:center; color:var(--muted); padding:30px;">Henüz kaydedilmiş favori yer bulunmuyor.</div>
@@ -175,7 +175,7 @@ require __DIR__ . '/lib/icons.php';
 <div class="about-backdrop" id="compareModal">
   <div class="about-card compare-card">
     <button class="about-close" id="compareClose">&times;</button>
-    <h2>⚖️ Şehir Karşılaştırma</h2>
+    <h2><?= icon('activity', 18) ?> Şehir Karşılaştırma</h2>
     <p class="sub">İki şehir veya ilçe seçerek değerlerini yan yana kıyaslayın.</p>
     <div class="compare-selectors">
       <select id="compSelect1" class="comp-select"><option value="">1. Şehri Seçin...</option></select>
@@ -192,13 +192,13 @@ require __DIR__ . '/lib/icons.php';
 <div class="about-backdrop" id="shareModal">
   <div class="about-card share-card">
     <button class="about-close" id="shareClose">&times;</button>
-    <h2>📸 Hikayede Paylaş</h2>
+    <h2><?= icon('globe', 18) ?> Hikayede Paylaş</h2>
     <p class="sub">Ruh şehrini veya uyum skorunu Instagram Story formatında indir ve paylaş!</p>
     <div class="canvas-preview-wrap">
       <canvas id="shareCanvas" width="540" height="960"></canvas>
     </div>
     <button class="social-btn insta" id="btnDownloadStory">
-      📥 Görseli İndir (Instagram Story)
+      <?= icon('download', 16) ?> Görseli İndir (Instagram Story)
     </button>
   </div>
 </div>
@@ -208,7 +208,7 @@ require __DIR__ . '/lib/icons.php';
   <div class="about-card">
     <button class="about-close" id="aboutClose">&times;</button>
     <div class="about-avatar">
-      <span>🚀</span>
+      <?= icon('zap', 24) ?>
     </div>
     <h2>Nexvia Digital Studio</h2>
     <div class="about-badge">⚡ Batuhan Akcan & Gönüllü Proje</div>
@@ -217,13 +217,13 @@ require __DIR__ . '/lib/icons.php';
     </p>
     <div class="social-links">
       <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="social-btn web">
-        🌐 Web Sitemiz: nexviastudio.com
+        <?= icon('globe', 16) ?> Web Sitemiz: nexviastudio.com
       </a>
       <a href="https://github.com/Nexvia-Digital-Studio" target="_blank" rel="noopener" class="social-btn github">
-        💻 GitHub: Nexvia Digital Studio
+        <?= icon('briefcase', 16) ?> GitHub: Nexvia Digital Studio
       </a>
       <a href="https://instagram.com/batuhann_akcan" target="_blank" rel="noopener" class="social-btn insta">
-        📸 Instagram: @batuhann_akcan
+        <?= icon('users', 16) ?> Instagram: @batuhann_akcan
       </a>
     </div>
     <div class="about-footer-text">Projelerimiz ve iş birlikleri için nexviastudio.com üzerinden ulaşabilirsiniz.</div>

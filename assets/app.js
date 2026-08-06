@@ -31,6 +31,10 @@ const SVG = {
   'layers':'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
   'wind':'<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>',
   'search':'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  'zap':'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  'download':'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  'trash':'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
 };
 
 function iconSvg(name, size=16, cls='ic'){
@@ -156,7 +160,7 @@ document.getElementById('aboutClose')?.addEventListener('click', closeAboutModal
 aboutBackdrop?.addEventListener('click', (e)=>{ if(e.target === aboutBackdrop) closeAboutModal(); });
 
 /* ============================================================
-   ❤️ FAVORİLERİM MODALI
+   FAVORİLERİM MODALI
    ============================================================ */
 const favsModal = document.getElementById('favsModal');
 
@@ -183,12 +187,12 @@ function renderFavsList(){
     html += `
       <div class="fav-item">
         <div class="fav-item-info">
-          <b>${type==='ilce'?'📍':'🏙️'} ${item.ad}</b>
+          <b>${iconSvg(type==='ilce'?'map-pin':'building',14)} ${item.ad}</b>
           <span>${sub} • Uyum: <b style="color:${col}">%${res.score}</b></span>
         </div>
         <div class="fav-item-actions">
-          <button class="btn" onclick="goToFav('${type}', ${item.id})">🗺️ Göster</button>
-          <button class="pop-btn fav active" onclick="toggleFav(${item.id}, '${type}')">🗑️</button>
+          <button class="btn" onclick="goToFav('${type}', ${item.id})">${iconSvg('navigation',13)} Göster</button>
+          <button class="pop-btn fav active" onclick="toggleFav(${item.id}, '${type}')">${iconSvg('trash',13)}</button>
         </div>
       </div>
     `;
@@ -219,7 +223,7 @@ document.getElementById('btnShowFavs')?.addEventListener('click', ()=>{
 document.getElementById('favsClose')?.addEventListener('click', ()=> favsModal?.classList.remove('show'));
 
 /* ============================================================
-   🔗 PAYLAŞILABİLİR DAVET LİNKİ SİSTEMİ
+   PAYLAŞILABİLİR DAVET LİNKİ SİSTEMİ
    ============================================================ */
 function copyInviteLink(cityName){
   const url = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(cityName)}`;
@@ -242,7 +246,7 @@ function checkInviteUrl(){
   const txt = document.getElementById('inviteText');
 
   if(target){
-    if(txt) txt.innerHTML = `✨ Bir arkadaşın senin için <b>${target.ad}</b> şehrini önerdi! Sen de kendi yaşam alanını keşfet.`;
+    if(txt) txt.innerHTML = `${iconSvg('zap',14)} Bir arkadaşın senin için <b>${target.ad}</b> şehrini önerdi! Sen de kendi yaşam alanını keşfet.`;
     if(banner) banner.classList.add('show');
 
     setTimeout(()=>{
@@ -298,28 +302,28 @@ const QUIZ_QUESTIONS = [
     title: "1. Nasıl bir doğa ve ortam hayal ediyorsun?",
     subtitle: "Sabah pencereyi açtığında gözünün önünde ne olsun?",
     options: [
-      { emoji: "🌊", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1 } },
-      { emoji: "🌲", label: "Yüksek Dağlar & Çam Kokulu Ormanlar", set: { rakim: [400, 2000] } },
-      { emoji: "🏙️", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10] } },
-      { emoji: "🏡", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500] } }
+      { ic: "waves", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1 } },
+      { ic: "mountain", label: "Yüksek Dağlar & Çam Kokulu Ormanlar", set: { rakim: [400, 2000] } },
+      { ic: "building", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10] } },
+      { ic: "compass", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500] } }
     ]
   },
   {
     title: "2. Sıcaklık ve hava tercihin nasıl?",
     subtitle: "Hangi iklim sana enerji veriyor?",
     options: [
-      { emoji: "☀️", label: "Sıcak & Bol Güneşli (Yaz Tutkunu)", set: { yaz_sicaklik: [26, 35] } },
-      { emoji: "⛅", label: "Ilıman, Serin & Dengeli Hava", set: { yillik_sicaklik: [10, 17] } },
-      { emoji: "❄️", label: "Kar Yağışlı & Soğuk Kış Günleri", set: { kis_sicaklik: [-10, 2], kar_yagisi: [30, 300] } }
+      { ic: "sun", label: "Sıcak & Bol Güneşli (Yaz Tutkunu)", set: { yaz_sicaklik: [26, 35] } },
+      { ic: "thermometer", label: "Ilıman, Serin & Dengeli Hava", set: { yillik_sicaklik: [10, 17] } },
+      { ic: "cloud-rain", label: "Kar Yağışlı & Soğuk Kış Günleri", set: { kis_sicaklik: [-10, 2], kar_yagisi: [30, 300] } }
     ]
   },
   {
     title: "3. Güvenlik ve Risk Toleransın?",
     subtitle: "Doğal afet kaygıların senin için ne kadar belirleyici?",
     options: [
-      { emoji: "🛡️", label: "Deprem Riski En Düşük Güvenli Bölgeler", set: { depremRiski: [0, 2] } },
-      { emoji: "🍃", label: "Temiz Hava & Sıfır Kirlilik (Düşük AQI)", set: { aqi: [0, 40] } },
-      { emoji: "🤷‍♂️", label: "Fark Etmez, Manzara ve Yaşam Kalitesi Önemli", set: {} }
+      { ic: "shield", label: "Deprem Riski En Düşük Güvenli Bölgeler", set: { depremRiski: [0, 2] } },
+      { ic: "wind", label: "Temiz Hava & Sıfır Kirlilik (Düşük AQI)", set: { aqi: [0, 40] } },
+      { ic: "globe", label: "Fark Etmez, Manzara ve Yaşam Kalitesi Önemli", set: {} }
     ]
   }
 ];
@@ -341,13 +345,13 @@ function renderQuizStep(){
   const pct = Math.round(((currentQuizStep + 1) / QUIZ_QUESTIONS.length) * 100);
 
   quizStepContainer.innerHTML = `
-    <h2>🔮 Ruh Şehrini Bul (${currentQuizStep + 1}/${QUIZ_QUESTIONS.length})</h2>
+    <h2>${iconSvg('compass',20)} Ruh Şehrini Bul (${currentQuizStep + 1}/${QUIZ_QUESTIONS.length})</h2>
     <p class="quiz-sub">${q.title}</p>
     <div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:${pct}%"></div></div>
     <div class="quiz-options-grid">
       ${q.options.map((opt, i) => `
         <button class="quiz-opt-btn" data-idx="${i}">
-          <span class="emoji">${opt.emoji}</span>
+          <span class="ico-svg">${iconSvg(opt.ic, 22)}</span>
           <span>${opt.label}</span>
         </button>
       `).join('')}
@@ -396,16 +400,16 @@ function calculateQuizResult(){
 
     quizStepContainer.innerHTML = `
       <div class="quiz-result-box">
-        <span class="trophy">🏆✨</span>
+        <span class="trophy">${iconSvg('zap', 42)}</span>
         <div class="about-badge">Ruh Şehriniz Bulundu!</div>
         <h3>${fullName}</h3>
         <p>Senin yaşam kriterlerinle <b>%${bestScore}</b> mükemmel uyum sağlıyor!</p>
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:20px;">
           <div style="display:flex; gap:10px;">
-            <button class="btn active" id="btnQuizGoMap">🗺️ Haritada Göster</button>
-            <button class="social-btn insta" id="btnQuizShare">📸 Hikayede Paylaş</button>
+            <button class="btn active" id="btnQuizGoMap">${iconSvg('navigation',14)} Haritada Göster</button>
+            <button class="social-btn insta" id="btnQuizShare">${iconSvg('globe',14)} Hikayede Paylaş</button>
           </div>
-          <button class="btn" id="btnQuizInvite" onclick="copyInviteLink('${bestCity.ad}')">🔗 Arkadaşlarını Davet Et</button>
+          <button class="btn" id="btnQuizInvite" onclick="copyInviteLink('${bestCity.ad}')">${iconSvg('link',14)} Arkadaşlarını Davet Et</button>
         </div>
       </div>
     `;
@@ -438,7 +442,7 @@ document.getElementById('btnStartQuiz')?.addEventListener('click', startQuiz);
 document.getElementById('quizClose')?.addEventListener('click', ()=> quizModal?.classList.remove('show'));
 
 /* ============================================================
-   2. 🎲 "BENİ ŞAŞIRT!" (PULSE ANİMASYONLU & OTOMATİK POPUP)
+   2. 🎲 "BENİ ŞAŞIRT!" (%100 GARANTİ POPUP & PULSE VURGUSU)
    ============================================================ */
 document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
   const validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
@@ -452,25 +456,32 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   }
 
-  const highlightAndOpen = ()=>{
-    const mk = isIlce ? markersIlce[target.id] : markersIl[target.id];
-    if(mk && mk.getElement()){
-      const el = mk.getElement();
-      el.classList.add('pulse-surprise');
-      setTimeout(()=> el.classList.remove('pulse-surprise'), 4500);
-    }
-    openCity(target, type);
-  };
-
+  // Marker'ın kesinlikle harita katmanında bulunmasını sağla
   if(isIlce){
     renderIlcelerLazy();
     if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
-    map.flyTo([target.lat, target.lng], 10.5, {duration: 0.8});
-    setTimeout(highlightAndOpen, 600);
+    const mk = markersIlce[target.id];
+    if(mk && !layerIlce.hasLayer(mk)) layerIlce.addLayer(mk);
   } else {
-    map.flyTo([target.lat, target.lng], 8.5, {duration: 0.8});
-    setTimeout(highlightAndOpen, 600);
+    if(!map.hasLayer(layerIl)) layerIl.addTo(map);
+    const mk = markersIl[target.id];
+    if(mk && !layerIl.hasLayer(mk)) layerIl.addLayer(mk);
   }
+
+  map.flyTo([target.lat, target.lng], isIlce ? 10.5 : 8.5, {duration: 0.8});
+
+  setTimeout(()=>{
+    const mk = isIlce ? markersIlce[target.id] : markersIl[target.id];
+    if(mk){
+      openCity(target, type);
+      mk.openPopup();
+      if(mk.getElement()){
+        const el = mk.getElement();
+        el.classList.add('pulse-surprise');
+        setTimeout(()=> el.classList.remove('pulse-surprise'), 4500);
+      }
+    }
+  }, 700);
 });
 
 /* ============================================================
@@ -499,7 +510,7 @@ function openShareModal(city, score){
   ctx.fillStyle = '#3b82f6';
   ctx.font = 'bold 22px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('🗺️ Yaşam Haritası', w/2, 70);
+  ctx.fillText('Yaşam Haritası', w/2, 70);
 
   ctx.fillStyle = '#94a3b8';
   ctx.font = '14px sans-serif';
@@ -536,7 +547,7 @@ function openShareModal(city, score){
   ctx.font = '18px sans-serif';
   ctx.fillText(subName, w/2, 495);
 
-  // Özellik Detay Kutusu (Polifill safe draw)
+  // Özellik Detay Kutusu
   ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
   if (ctx.roundRect) ctx.roundRect(40, 540, w - 80, 240, 16); else ctx.fillRect(40, 540, w - 80, 240);
   ctx.fill();
@@ -546,11 +557,11 @@ function openShareModal(city, score){
   ctx.textAlign = 'left';
 
   const stats = [
-    `🌡️ Yıllık Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
-    `🌊 Deniz Mesafesi: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
-    `⛰️ Rakım / Yükseklik: ${city.rakim || 0} m`,
-    `💨 Canlı Hava (AQI): ${city.aqi || 25} AQI`,
-    `🍃 Canlı Nem Oranı: %${city.nem || 60}`
+    `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
+    `Deniz Konumu: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
+    `Rakım: ${city.rakim || 0} m`,
+    `Canlı Hava (AQI): ${city.aqi || 25} AQI`,
+    `Canlı Nem Oranı: %${city.nem || 60}`
   ];
 
   stats.forEach((s, idx) => {
@@ -564,7 +575,7 @@ function openShareModal(city, score){
   ctx.fillText('Sen de kendi ruh şehrini keşfet: nexviastudio.com', w/2, 890);
   ctx.fillStyle = '#64748b';
   ctx.font = '11px sans-serif';
-  ctx.fillText('🚀 Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 920);
+  ctx.fillText('Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 920);
 }
 
 document.getElementById('shareClose')?.addEventListener('click', ()=> shareModal?.classList.remove('show'));
@@ -1159,11 +1170,11 @@ function popupHtml(c, res, type){
 
   return `<div class="pop">
     <h3>
-      <span class="pop-title-left">${iconSvg('map-pin',15)} ${baslik}</span>
+      <span class="pop-title-left">${iconSvg(type==='ilce'?'map-pin':'building',15)} ${baslik}</span>
       <div class="pop-actions-top">
-        <button class="pop-btn fav ${isFav?'active':''}" onclick="toggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${isFav?'❤️':'🤍'}</button>
-        <button class="pop-btn share" onclick="copyInviteLink('${c.ad}')" title="Davet Bağlantısını Kopyala">🔗 Link</button>
-        <button class="pop-btn share" onclick="openShareModal(RAW.${type==='il'?'iller':'ilceler'}.find(x=>x.id===${c.id}), ${res.score})" title="Instagram Story Kartı Oluştur">📸</button>
+        <button class="pop-btn fav ${isFav?'active':''}" onclick="toggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('shield',13)}</button>
+        <button class="pop-btn share" onclick="copyInviteLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
+        <button class="pop-btn share" onclick="openShareModal(RAW.${type==='il'?'iller':'ilceler'}.find(x=>x.id===${c.id}), ${res.score})" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
       </div>
     </h3>
     <div class="region">${altBaslik}</div>
@@ -1178,6 +1189,17 @@ function popupHtml(c, res, type){
 function openCity(c, type){
   const mk = type==='il' ? markersIl[c.id] : markersIlce[c.id];
   if(!mk) return;
+
+  // Katmanda olmasını garanti et
+  if(type==='ilce'){
+    renderIlcelerLazy();
+    if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+    if(!layerIlce.hasLayer(mk)) layerIlce.addLayer(mk);
+  } else {
+    if(!map.hasLayer(layerIl)) layerIl.addTo(map);
+    if(!layerIl.hasLayer(mk)) layerIl.addLayer(mk);
+  }
+
   const res = evalCity(c);
   mk.unbindPopup();
   mk.bindPopup(popupHtml(c,res,type)).openPopup();
@@ -1247,7 +1269,7 @@ function update(){
 }
 
 /* ============================================================
-   CANLI İL VE İLÇE ARAMA AÇILIR MENÜSÜ
+   CANLI İL VE İLÇE ARAMA (AKILLI STARTSWITH SIRALAMASI VE DÜZGÜN ARAYÜZ)
    ============================================================ */
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
@@ -1261,10 +1283,22 @@ function filterSearch(){
     return;
   }
 
-  const matchedIlceler = RAW.ilceler.filter(d=> d.ad.toLowerCase().includes(q)).slice(0, 7);
-  const matchedIller = RAW.iller.filter(c=> c.ad.toLowerCase().includes(q)).slice(0, 5);
+  // Önce arama kelimesiyle BAŞLAYANLAR, sonra İÇİNDE GEÇENLER
+  const filterAndSort = (list) => {
+    const starts = [];
+    const includes = [];
+    list.forEach(item => {
+      const name = item.ad.toLowerCase();
+      if (name.startsWith(q)) starts.push(item);
+      else if (name.includes(q)) includes.push(item);
+    });
+    return [...starts, ...includes];
+  };
 
-  if(matchedIlceler.length === 0 && matchedIller.length === 0){
+  const sortedIlceler = filterAndSort(RAW.ilceler).slice(0, 6);
+  const sortedIller = filterAndSort(RAW.iller).slice(0, 4);
+
+  if(sortedIlceler.length === 0 && sortedIller.length === 0){
     searchResults.innerHTML = `<div class="search-item" style="color:var(--muted);justify-content:center;">Sonuç bulunamadı</div>`;
     searchResults.classList.add('active');
     return;
@@ -1272,25 +1306,25 @@ function filterSearch(){
 
   let html = '';
 
-  matchedIlceler.forEach(d=>{
+  sortedIlceler.forEach(d=>{
     const il = RAW.iller.find(i=> i.id === d.il_id);
     const res = evalCity(d);
     const col = colorFor(res.score, res.eligible);
     html += `<div class="search-item" data-type="ilce" data-id="${d.id}">
       <div>
-        <b>📍 ${d.ad}</b>
+        <div class="item-title">${iconSvg('map-pin',14)} ${d.ad}</div>
         <div class="item-sub">${il ? il.ad+' ili' : ''}</div>
       </div>
       <b style="color:${col}">%${res.score}</b>
     </div>`;
   });
 
-  matchedIller.forEach(c=>{
+  sortedIller.forEach(c=>{
     const res = evalCity(c);
     const col = colorFor(res.score, res.eligible);
     html += `<div class="search-item" data-type="il" data-id="${c.id}">
       <div>
-        <b>🏙️ ${c.ad} (İl)</b>
+        <div class="item-title">${iconSvg('building',14)} ${c.ad} (İl)</div>
         <div class="item-sub">${c.bolge}</div>
       </div>
       <b style="color:${col}">%${res.score}</b>
