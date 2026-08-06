@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yaşam Haritası — Türkiye'de Nerede Yaşarım?</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel2:#334155; --txt:#e2e8f0;
+    --muted:#94a3b8; --accent:#3b82f6; --accent2:#60a5fa; --good:#22c55e;
+    --warn:#eab308; --bad:#ef4444; --border:#334155;
+  }
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--txt); overflow:hidden;
+  }
+  #app{display:flex; height:100vh; width:100vw;}
+
+  /* SIDEBAR */
+  #sidebar{
+    width:380px; min-width:380px; height:100%; background:var(--panel);
+    display:flex; flex-direction:column; border-right:1px solid var(--border); z-index:1000;
+  }
+  .sb-head{
+    padding:16px 18px 12px; background:linear-gradient(135deg,#1e3a8a,#1e40af);
+    border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .sb-head h1{font-size:18px; font-weight:700; letter-spacing:.3px; display:flex; align-items:center; gap:8px;}
+  .sb-head p{font-size:12px; color:var(--muted); margin-top:4px;}
+  .sb-stats{
+    display:flex; gap:8px; margin-top:10px; font-size:13px;
+  }
+  .stat-pill{
+    flex:1; background:rgba(255,255,255,.08); padding:8px 10px; border-radius:8px; text-align:center;
+  }
+  .stat-pill b{display:block; font-size:18px; color:#fff;}
+  .stat-pill span{font-size:11px; color:var(--muted);}
+  .sb-actions{
+    display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid var(--border); flex-shrink:0;
+  }
+  .btn{
+    flex:1; padding:8px; border:1px solid var(--border); background:var(--panel2); color:var(--txt);
+    border-radius:7px; cursor:pointer; font-size:12px; font-weight:600; transition:.15s;
+  }
+  .btn:hover{background:#475569;}
+  .btn.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+
+  .filters{flex:1; overflow-y:auto; padding:8px 12px 30px;}
+  .filters::-webkit-scrollbar{width:8px;}
+  .filters::-webkit-scrollbar-thumb{background:#475569; border-radius:4px;}
+  .filters::-webkit-scrollbar-track{background:transparent;}
+
+  .grp{margin-bottom:6px; border:1px solid var(--border); border-radius:9px; overflow:hidden; background:rgba(255,255,255,.02);}
+  .grp-head{
+    display:flex; align-items:center; gap:8px; padding:10px 12px; cursor:pointer;
+    font-weight:700; font-size:13px; user-select:none; background:rgba(255,255,255,.03);
+  }
+  .grp-head:hover{background:rgba(255,255,255,.07);}
+  .grp-head .ico{font-size:15px;}
+  .grp-head .chev{margin-left:auto; transition:.2s; color:var(--muted); font-size:12px;}
+  .grp.open .chev{transform:rotate(90deg);}
+  .grp-body{display:none; padding:8px 12px 12px;}
+  .grp.open .grp-body{display:block;}
+
+  .filter{margin-bottom:14px;}
+  .filter:last-child{margin-bottom:4px;}
+  .f-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .f-label{font-size:12px; font-weight:600; color:var(--txt);}
+  .f-val{font-size:11px; color:var(--accent2); font-weight:600; background:rgba(59,130,246,.12); padding:2px 7px; border-radius:5px;}
+  .f-val.default{color:var(--muted); background:rgba(148,163,184,.1);}
+
+  /* dual range slider */
+  .range-wrap{position:relative; height:24px;}
+  .range-wrap input[type=range]{
+    position:absolute; left:0; right:0; width:100%; top:6px; height:12px;
+    pointer-events:none; -webkit-appearance:none; appearance:none; background:transparent; margin:0; z-index:3;
+  }
+  .range-wrap input[type=range]::-webkit-slider-thumb{
+    pointer-events:auto; -webkit-appearance:none; appearance:none; width:16px; height:16px;
+    border-radius:50%; background:#fff; border:2px solid var(--accent); cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.4);
+  }
+  .range-wrap input[type=range]::-moz-range-thumb{
+    pointer-events:auto; width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid var(--accent); cursor:pointer;
+  }
+  .range-track{position:absolute; top:10px; height:4px; width:100%; background:#475569; border-radius:2px; z-index:1;}
+  .range-fill{position:absolute; height:100%; background:var(--accent); border-radius:2px;}
+
+  /* tri switch */
+  .tri{display:flex; gap:4px; background:#0f172a; border-radius:7px; padding:3px;}
+  .tri button{
+    flex:1; padding:6px 4px; border:none; background:transparent; color:var(--muted);
+    font-size:11px; font-weight:600; border-radius:5px; cursor:pointer; transition:.15s;
+  }
+  .tri button.sel{background:var(--accent); color:#fff;}
+
+  /* checkboxes */
+  .checks{display:flex; flex-wrap:wrap; gap:6px;}
+  .checks label{
+    display:flex; align-items:center; gap:5px; font-size:11px; padding:5px 9px;
+    background:#0f172a; border:1px solid var(--border); border-radius:6px; cursor:pointer; user-select:none;
+  }
+  .checks label:hover{border-color:var(--accent);}
+  .checks input{accent-color:var(--accent);}
+
+  .hint{font-size:10px; color:var(--muted); margin-top:-4px; margin-bottom:8px; line-height:1.4;}
+
+  /* MAP */
+  #map{flex:1; height:100%; background:#1a1a2e; z-index:1;}
+  .leaflet-container{background:#0f172a;}
+
+  /* custom marker */
+  .city-marker{
+    border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.5);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    transition:transform .15s; font-weight:700; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.6);
+  }
+  .city-marker:hover{transform:scale(1.25); z-index:9999;}
+
+  /* popup */
+  .leaflet-popup-content-wrapper{background:#1e293b; color:var(--txt); border-radius:10px; border:1px solid var(--border);}
+  .leaflet-popup-tip{background:#1e293b;}
+  .pop{min-width:240px; max-width:280px;}
+  .pop h3{font-size:15px; margin-bottom:2px; display:flex; align-items:center; gap:6px;}
+  .pop .region{font-size:11px; color:var(--accent2); margin-bottom:8px;}
+  .pop .scorebar{margin:8px 0; background:#0f172a; border-radius:6px; height:8px; overflow:hidden;}
+  .pop .scorefill{height:100%; border-radius:6px; transition:width .4s;}
+  .pop .scoretxt{font-size:11px; color:var(--muted); display:flex; justify-content:space-between; margin-bottom:4px;}
+  .pop .grid{display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; font-size:11px; margin-top:8px;}
+  .pop .grid div{display:flex; justify-content:space-between; border-bottom:1px solid rgba(148,163,184,.15); padding:2px 0;}
+  .pop .grid b{color:var(--txt); font-weight:600;}
+
+  /* legend */
+  .legend{
+    position:absolute; bottom:16px; right:16px; background:rgba(30,41,59,.95); padding:10px 12px;
+    border-radius:9px; border:1px solid var(--border); z-index:500; font-size:11px; backdrop-filter:blur(6px);
+  }
+  .legend h4{font-size:11px; margin-bottom:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;}
+  .legend .row{display:flex; align-items:center; gap:7px; margin:3px 0;}
+  .legend .dot{width:12px; height:12px; border-radius:50%; border:1.5px solid #fff;}
+
+  /* mobile toggle */
+  #toggleSb{
+    position:absolute; top:14px; left:14px; z-index:1200; display:none;
+    background:var(--panel); border:1px solid var(--border); color:#fff; width:42px; height:42px;
+    border-radius:9px; font-size:18px; cursor:pointer;
+  }
+  @media(max-width:760px){
+    #sidebar{position:absolute; left:0; top:0; transform:translateX(-100%); transition:.25s; box-shadow:4px 0 20px rgba(0,0,0,.5);}
+    #sidebar.show{transform:translateX(0);}
+    #toggleSb{display:block;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <button id="toggleSb">☰</button>
+
+  <aside id="sidebar">
+    <div class="sb-head">
+      <h1>📍 Yaşam Haritası</h1>
+      <p>Türkiye'de hangi il sana uygun? Filtrele, keşfet.</p>
+      <div class="sb-stats">
+        <div class="stat-pill"><b id="cntMatch">81</b><span>uygun il</span></div>
+        <div class="stat-pill"><b id="cntActive">0</b><span>aktif filtre</span></div>
+        <div class="stat-pill"><b id="cntBest">0</b><span>en iyi skor</span></div>
+      </div>
+    </div>
+    <div class="sb-actions">
+      <button class="btn" id="btnReset">↺ Sıfırla</button>
+      <button class="btn active" id="btnStrict">✔ Sadece uygun</button>
+    </div>
+    <div class="filters" id="filters"></div>
+  </aside>
+
+  <div id="map"></div>
+  <div class="legend">
+    <h4>Uyum Skoru</h4>
+    <div class="row"><div class="dot" style="background:#16a34a"></div>Çok iyi (%80+)</div>
+    <div class="row"><div class="dot" style="background:#84cc16"></div>İyi (%60–80)</div>
+    <div class="row"><div class="dot" style="background:#eab308"></div>Orta (%40–60)</div>
+    <div class="row"><div class="dot" style="background:#94a3b8"></div>Zayıf / elendi</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   VERİ SETİ — Türkiye 81 il (değerler yaklaşık/temsilidir)
+   Sayısal ölçekler: 0-10 olanlar 10=çok/iyi (risk filtrelerinde 10=kötü)
+   ============================================================ */
+const CITIES = [
+{id:1,name:"Adana",lat:37.0,lng:35.32,bolge:"Akdeniz",nufus:2274,rakim:27,deniz:0,denizMesafe:50,daglik:3,sicaklikOrt:19.2,kisSicaklik:9.5,yazSicaklik:28.7,yagis:667,gunes:2650,nem:66,trafik:6,havaKalitesi:7,depremRiski:4,isImkanlari:6,saglik:6,egitim:6,sosyalYasam:6,ulasim:7,internet:60,yasamMaliyeti:5,yabanci:1,guvenlik:7},
+{id:2,name:"Adıyaman",lat:37.76,lng:38.28,bolge:"Güneydoğu",nufus:632,rakim:665,deniz:0,denizMesafe:280,daglik:7,sicaklikOrt:16.8,kisSicaklik:4.0,yazSicaklik:30.5,yagis:720,gunes:2700,nem:50,trafik:3,havaKalitesi:5,depremRiski:4,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:4,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:3,name:"Afyonkarahisar",lat:38.76,lng:30.53,bolge:"Ege",nufus:736,rakim:1034,deniz:0,denizMesafe:240,daglik:6,sicaklikOrt:11.4,kisSicaklik:0.5,yazSicaklik:22.5,yagis:430,gunes:2500,nem:60,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:4,name:"Ağrı",lat:39.72,lng:43.05,bolge:"Doğu Anadolu",nufus:511,rakim:1632,deniz:0,denizMesafe:520,daglik:8,sicaklikOrt:6.5,kisSicaklik:-8.5,yazSicaklik:21.0,yagis:520,gunes:2600,nem:55,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:5,name:"Amasya",lat:40.65,lng:35.84,bolge:"Karadeniz",nufus:346,rakim:411,deniz:0,denizMesafe:140,daglik:7,sicaklikOrt:13.8,kisSicaklik:1.5,yazSicaklik:24.0,yagis:440,gunes:2100,nem:60,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:6,name:"Ankara",lat:39.93,lng:32.85,bolge:"İç Anadolu",nufus:5748,rakim:938,deniz:0,denizMesafe:340,daglik:4,sicaklikOrt:12.0,kisSicaklik:0.5,yazSicaklik:23.5,yagis:415,gunes:2500,nem:58,trafik:8,havaKalitesi:6,depremRiski:3,isImkanlari:9,saglik:9,egitim:9,sosyalYasam:8,ulasim:9,internet:80,yasamMaliyeti:6,yabanci:2,guvenlik:7},
+{id:7,name:"Antalya",lat:36.9,lng:30.69,bolge:"Akdeniz",nufus:2619,rakim:41,deniz:1,denizMesafe:0,daglik:6,sicaklikOrt:18.7,kisSicaklik:10.0,yazSicaklik:28.5,yagis:1060,gunes:2900,nem:62,trafik:6,havaKalitesi:6,depremRiski:4,isImkanlari:6,saglik:7,egitim:6,sosyalYasam:8,ulasim:7,internet:70,yasamMaliyeti:7,yabanci:8,guvenlik:7},
+{id:8,name:"Artvin",lat:41.18,lng:41.82,bolge:"Karadeniz",nufus:168,rakim:580,deniz:0,denizMesafe:80,daglik:9,sicaklikOrt:12.5,kisSicaklik:3.0,yazSicaklik:21.0,yagis:720,gunes:1900,nem:70,trafik:2,havaKalitesi:2,depremRiski:3,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:9,name:"Aydın",lat:37.84,lng:27.84,bolge:"Ege",nufus:1149,rakim:56,deniz:0,denizMesafe:40,daglik:4,sicaklikOrt:18.0,kisSicaklik:8.5,yazSicaklik:28.0,yagis:700,gunes:2750,nem:60,trafik:3,havaKalitesi:6,depremRiski:4,isImkanlari:5,saglik:5,egitim:5,sosyalYasam:5,ulasim:6,internet:55,yasamMaliyeti:5,yabanci:3,guvenlik:7},
+{id:10,name:"Balıkesir",lat:39.65,lng:27.88,bolge:"Marmara",nufus:1261,rakim:130,deniz:0,denizMesafe:50,daglik:4,sicaklikOrt:14.8,kisSicaklik:5.0,yazSicaklik:25.0,yagis:600,gunes:2500,nem:62,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:5,saglik:5,egitim:5,sosyalYasam:4,ulasim:6,internet:50,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:11,name:"Bilecik",lat:40.14,lng:29.98,bolge:"Marmara",nufus:228,rakim:540,deniz:0,denizMesafe:120,daglik:6,sicaklikOrt:13.5,kisSicaklik:2.5,yazSicaklik:23.5,yagis:520,gunes:2400,nem:62,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:12,name:"Bingöl",lat:38.88,lng:40.5,bolge:"Doğu Anadolu",nufus:282,rakim:1177,deniz:0,denizMesafe:380,daglik:8,sicaklikOrt:11.5,kisSicaklik:-1.5,yazSicaklik:26.0,yagis:900,gunes:2600,nem:53,trafik:2,havaKalitesi:4,depremRiski:5,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:13,name:"Bitlis",lat:38.4,lng:42.11,bolge:"Doğu Anadolu",nufus:354,rakim:1549,deniz:0,denizMesafe:430,daglik:9,sicaklikOrt:9.0,kisSicaklik:-4.0,yazSicaklik:24.0,yagis:1200,gunes:2600,nem:55,trafik:2,havaKalitesi:3,depremRiski:4,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:28,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:14,name:"Bolu",lat:40.74,lng:31.61,bolge:"Karadeniz",nufus:323,rakim:740,deniz:0,denizMesafe:120,daglik:7,sicaklikOrt:10.5,kisSicaklik:0.0,yazSicaklik:20.0,yagis:550,gunes:2000,nem:68,trafik:3,havaKalitesi:4,depremRiski:4,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:15,name:"Burdur",lat:37.72,lng:30.28,bolge:"Akdeniz",nufus:270,rakim:958,deniz:0,denizMesafe:140,daglik:6,sicaklikOrt:13.0,kisSicaklik:3.0,yazSicaklik:24.0,yagis:440,gunes:2600,nem:58,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:16,name:"Bursa",lat:40.2,lng:29.0,bolge:"Marmara",nufus:3194,rakim:100,deniz:0,denizMesafe:25,daglik:5,sicaklikOrt:14.6,kisSicaklik:5.0,yazSicaklik:24.5,yagis:700,gunes:2400,nem:64,trafik:7,havaKalitesi:7,depremRiski:3,isImkanlari:8,saglik:8,egitim:7,sosyalYasam:7,ulasim:8,internet:75,yasamMaliyeti:6,yabanci:3,guvenlik:7},
+{id:17,name:"Çanakkale",lat:40.16,lng:26.41,bolge:"Marmara",nufus:542,rakim:6,deniz:1,denizMesafe:0,daglik:5,sicaklikOrt:14.8,kisSicaklik:5.5,yazSicaklik:24.5,yagis:610,gunes:2500,nem:66,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:5,ulasim:6,internet:55,yasamMaliyeti:4,yabanci:2,guvenlik:8},
+{id:18,name:"Çankırı",lat:40.6,lng:33.61,bolge:"İç Anadolu",nufus:194,rakim:730,deniz:0,denizMesafe:230,daglik:6,sicaklikOrt:11.5,kisSicaklik:0.0,yazSicaklik:22.5,yagis:430,gunes:2400,nem:60,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:4,egitim:3,sosyalYasam:2,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:19,name:"Çorum",lat:40.55,lng:34.96,bolge:"Karadeniz",nufus:532,rakim:780,deniz:0,denizMesafe:200,daglik:6,sicaklikOrt:11.2,kisSicaklik:0.0,yazSicaklik:22.0,yagis:450,gunes:2200,nem:60,trafik:3,havaKalitesi:5,depremRiski:2,isImkanlari:3,saglik:5,egitim:5,sosyalYasam:3,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:20,name:"Denizli",lat:37.78,lng:29.08,bolge:"Ege",nufus:1053,rakim:357,deniz:0,denizMesafe:140,daglik:5,sicaklikOrt:16.0,kisSicaklik:5.5,yazSicaklik:27.0,yagis:530,gunes:2700,nem:58,trafik:4,havaKalitesi:6,depremRiski:4,isImkanlari:6,saglik:6,egitim:6,sosyalYasam:5,ulasim:6,internet:60,yasamMaliyeti:4,yabanci:2,guvenlik:8},
+{id:21,name:"Diyarbakır",lat:37.91,lng:40.23,bolge:"Güneydoğu",nufus:1796,rakim:660,deniz:0,denizMesafe:340,daglik:5,sicaklikOrt:15.5,kisSicaklik:2.0,yazSicaklik:31.0,yagis:470,gunes:2750,nem:48,trafik:5,havaKalitesi:6,depremRiski:3,isImkanlari:5,saglik:6,egitim:6,sosyalYasam:6,ulasim:6,internet:50,yasamMaliyeti:4,yabanci:1,guvenlik:6},
+{id:22,name:"Edirne",lat:41.68,lng:26.56,bolge:"Marmara",nufus:410,rakim:41,deniz:0,denizMesafe:70,daglik:3,sicaklikOrt:13.5,kisSicaklik:2.0,yazSicaklik:24.5,yagis:580,gunes:2400,nem:66,trafik:3,havaKalitesi:5,depremRiski:2,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:5,ulasim:6,internet:55,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:23,name:"Elazığ",lat:38.68,lng:39.21,bolge:"Doğu Anadolu",nufus:585,rakim:1067,deniz:0,denizMesafe:340,daglik:7,sicaklikOrt:13.5,kisSicaklik:-0.5,yazSicaklik:27.0,yagis:480,gunes:2600,nem:54,trafik:3,havaKalitesi:6,depremRiski:5,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:5,internet:45,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:24,name:"Erzincan",lat:39.75,lng:39.5,bolge:"Doğu Anadolu",nufus:234,rakim:1215,deniz:0,denizMesafe:330,daglik:8,sicaklikOrt:10.5,kisSicaklik:-2.5,yazSicaklik:23.5,yagis:400,gunes:2500,nem:58,trafik:2,havaKalitesi:4,depremRiski:5,isImkanlari:3,saglik:5,egitim:5,sosyalYasam:3,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:25,name:"Erzurum",lat:39.9,lng:41.27,bolge:"Doğu Anadolu",nufus:740,rakim:1893,deniz:0,denizMesafe:380,daglik:8,sicaklikOrt:6.0,kisSicaklik:-8.0,yazSicaklik:20.0,yagis:430,gunes:2600,nem:60,trafik:3,havaKalitesi:5,depremRiski:4,isImkanlari:4,saglik:6,egitim:6,sosyalYasam:4,ulasim:5,internet:45,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:26,name:"Eskişehir",lat:39.78,lng:30.52,bolge:"İç Anadolu",nufus:898,rakim:792,deniz:0,denizMesafe:280,daglik:4,sicaklikOrt:11.0,kisSicaklik:0.0,yazSicaklik:22.0,yagis:390,gunes:2400,nem:60,trafik:4,havaKalitesi:5,depremRiski:3,isImkanlari:6,saglik:7,egitim:8,sosyalYasam:7,ulasim:7,internet:75,yasamMaliyeti:5,yabanci:2,guvenlik:8},
+{id:27,name:"Gaziantep",lat:37.07,lng:37.38,bolge:"Güneydoğu",nufus:2131,rakim:734,deniz:0,denizMesafe:200,daglik:5,sicaklikOrt:15.8,kisSicaklik:3.5,yazSicaklik:29.5,yagis:560,gunes:2750,nem:50,trafik:5,havaKalitesi:6,depremRiski:3,isImkanlari:7,saglik:7,egitim:6,sosyalYasam:6,ulasim:6,internet:55,yasamMaliyeti:4,yabanci:1,guvenlik:6},
+{id:28,name:"Giresun",lat:40.91,lng:38.39,bolge:"Karadeniz",nufus:441,rakim:39,deniz:1,denizMesafe:0,daglik:8,sicaklikOrt:14.5,kisSicaklik:6.0,yazSicaklik:23.0,yagis:1250,gunes:1800,nem:72,trafik:2,havaKalitesi:3,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:4,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:29,name:"Gümüşhane",lat:40.44,lng:39.51,bolge:"Karadeniz",nufus:144,rakim:1393,deniz:0,denizMesafe:120,daglik:9,sicaklikOrt:9.0,kisSicaklik:-2.0,yazSicaklik:20.0,yagis:520,gunes:2100,nem:62,trafik:2,havaKalitesi:3,depremRiski:3,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:4,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:30,name:"Hakkari",lat:37.57,lng:43.74,bolge:"Doğu Anadolu",nufus:284,rakim:1720,deniz:0,denizMesafe:520,daglik:10,sicaklikOrt:8.5,kisSicaklik:-4.5,yazSicaklik:23.0,yagis:780,gunes:2700,nem:48,trafik:2,havaKalitesi:3,depremRiski:3,isImkanlari:1,saglik:3,egitim:3,sosyalYasam:2,ulasim:2,internet:25,yasamMaliyeti:3,yabanci:0,guvenlik:6},
+{id:31,name:"Hatay",lat:36.2,lng:36.16,bolge:"Akdeniz",nufus:1671,rakim:67,deniz:0,denizMesafe:30,daglik:5,sicaklikOrt:19.0,kisSicaklik:9.0,yazSicaklik:29.0,yagis:1130,gunes:2700,nem:65,trafik:4,havaKalitesi:6,depremRiski:5,isImkanlari:5,saglik:6,egitim:6,sosyalYasam:6,ulasim:6,internet:50,yasamMaliyeti:5,yabanci:3,guvenlik:6},
+{id:32,name:"Isparta",lat:37.77,lng:30.55,bolge:"Akdeniz",nufus:440,rakim:1050,deniz:0,denizMesafe:130,daglik:6,sicaklikOrt:12.5,kisSicaklik:2.5,yazSicaklik:24.0,yagis:520,gunes:2600,nem:58,trafik:3,havaKalitesi:4,depremRiski:3,isImkanlari:4,saglik:5,egitim:6,sosyalYasam:4,ulasim:5,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:33,name:"Mersin",lat:36.81,lng:34.64,bolge:"Akdeniz",nufus:1889,rakim:6,deniz:1,denizMesafe:0,daglik:4,sicaklikOrt:19.1,kisSicaklik:10.5,yazSicaklik:28.5,yagis:660,gunes:2750,nem:66,trafik:5,havaKalitesi:6,depremRiski:4,isImkanlari:6,saglik:6,egitim:6,sosyalYasam:6,ulasim:6,internet:60,yasamMaliyeti:5,yabanci:2,guvenlik:7},
+{id:34,name:"İstanbul",lat:41.01,lng:28.98,bolge:"Marmara",nufus:15461,rakim:40,deniz:1,denizMesafe:0,daglik:2,sicaklikOrt:14.5,kisSicaklik:5.5,yazSicaklik:24.0,yagis:700,gunes:2400,nem:70,trafik:10,havaKalitesi:7,depremRiski:5,isImkanlari:10,saglik:9,egitim:10,sosyalYasam:10,ulasim:10,internet:90,yasamMaliyeti:9,yabanci:4,guvenlik:6},
+{id:35,name:"İzmir",lat:38.42,lng:27.14,bolge:"Ege",nufus:4467,rakim:29,deniz:1,denizMesafe:0,daglik:3,sicaklikOrt:17.8,kisSicaklik:8.5,yazSicaklik:27.5,yagis:700,gunes:2750,nem:60,trafik:8,havaKalitesi:6,depremRiski:4,isImkanlari:9,saglik:8,egitim:8,sosyalYasam:9,ulasim:8,internet:85,yasamMaliyeti:7,yabanci:4,guvenlik:7},
+{id:36,name:"Kars",lat:40.6,lng:43.1,bolge:"Doğu Anadolu",nufus:282,rakim:1768,deniz:0,denizMesafe:380,daglik:8,sicaklikOrt:5.0,kisSicaklik:-9.0,yazSicaklik:19.0,yagis:480,gunes:2500,nem:62,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:4,egitim:4,sosyalYasam:3,ulasim:4,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:37,name:"Kastamonu",lat:41.37,lng:33.78,bolge:"Karadeniz",nufus:382,rakim:604,deniz:0,denizMesafe:90,daglik:7,sicaklikOrt:10.5,kisSicaklik:-0.5,yazSicaklik:21.0,yagis:520,gunes:2000,nem:66,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:38,name:"Kayseri",lat:38.73,lng:35.48,bolge:"İç Anadolu",nufus:1445,rakim:1054,deniz:0,denizMesafe:280,daglik:5,sicaklikOrt:11.0,kisSicaklik:-0.5,yazSicaklik:23.0,yagis:390,gunes:2500,nem:58,trafik:4,havaKalitesi:6,depremRiski:3,isImkanlari:6,saglik:7,egitim:7,sosyalYasam:6,ulasim:7,internet:65,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:39,name:"Kırklareli",lat:41.73,lng:27.22,bolge:"Marmara",nufus:366,rakim:220,deniz:0,denizMesafe:55,daglik:4,sicaklikOrt:13.0,kisSicaklik:2.0,yazSicaklik:24.0,yagis:560,gunes:2400,nem:66,trafik:2,havaKalitesi:4,depremRiski:2,isImkanlari:4,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:50,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:40,name:"Kırşehir",lat:39.14,lng:34.16,bolge:"İç Anadolu",nufus:244,rakim:1005,deniz:0,denizMesafe:280,daglik:5,sicaklikOrt:11.5,kisSicaklik:0.5,yazSicaklik:23.0,yagis:400,gunes:2500,nem:58,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:4,egitim:4,sosyalYasam:2,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:41,name:"Kocaeli",lat:40.85,lng:29.88,bolge:"Marmara",nufus:2023,rakim:33,deniz:1,denizMesafe:0,daglik:3,sicaklikOrt:14.5,kisSicaklik:4.5,yazSicaklik:24.5,yagis:780,gunes:2300,nem:70,trafik:7,havaKalitesi:8,depremRiski:5,isImkanlari:9,saglik:7,egitim:6,sosyalYasam:6,ulasim:9,internet:80,yasamMaliyeti:6,yabanci:2,guvenlik:7},
+{id:42,name:"Konya",lat:37.87,lng:32.49,bolge:"İç Anadolu",nufus:2304,rakim:1027,deniz:0,denizMesafe:280,daglik:4,sicaklikOrt:11.7,kisSicaklik:0.5,yazSicaklik:23.5,yagis:330,gunes:2700,nem:55,trafik:5,havaKalitesi:6,depremRiski:3,isImkanlari:6,saglik:7,egitim:7,sosyalYasam:5,ulasim:7,internet:70,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:43,name:"Kütahya",lat:39.42,lng:29.98,bolge:"Ege",nufus:581,rakim:968,deniz:0,denizMesafe:200,daglik:6,sicaklikOrt:11.0,kisSicaklik:0.5,yazSicaklik:22.0,yagis:470,gunes:2400,nem:62,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:44,name:"Malatya",lat:38.36,lng:38.31,bolge:"Doğu Anadolu",nufus:812,rakim:953,deniz:0,denizMesafe:340,daglik:7,sicaklikOrt:13.5,kisSicaklik:0.0,yazSicaklik:27.0,yagis:430,gunes:2700,nem:52,trafik:3,havaKalitesi:6,depremRiski:5,isImkanlari:4,saglik:6,egitim:6,sosyalYasam:4,ulasim:5,internet:45,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:45,name:"Manisa",lat:38.62,lng:27.43,bolge:"Ege",nufus:1468,rakim:71,deniz:0,denizMesafe:50,daglik:4,sicaklikOrt:17.0,kisSicaklik:7.0,yazSicaklik:28.0,yagis:600,gunes:2700,nem:58,trafik:4,havaKalitesi:6,depremRiski:4,isImkanlari:6,saglik:6,egitim:5,sosyalYasam:5,ulasim:7,internet:60,yasamMaliyeti:4,yabanci:2,guvenlik:7},
+{id:46,name:"Kahramanmaraş",lat:37.59,lng:36.93,bolge:"Akdeniz",nufus:1175,rakim:679,deniz:0,denizMesafe:170,daglik:6,sicaklikOrt:15.5,kisSicaklik:3.5,yazSicaklik:28.5,yagis:560,gunes:2700,nem:55,trafik:3,havaKalitesi:6,depremRiski:5,isImkanlari:5,saglik:6,egitim:5,sosyalYasam:4,ulasim:6,internet:45,yasamMaliyeti:4,yabanci:1,guvenlik:7},
+{id:47,name:"Mardin",lat:37.31,lng:40.74,bolge:"Güneydoğu",nufus:878,rakim:1082,deniz:0,denizMesafe:340,daglik:6,sicaklikOrt:15.8,kisSicaklik:3.5,yazSicaklik:30.0,yagis:560,gunes:2850,nem:46,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:1,guvenlik:6},
+{id:48,name:"Muğla",lat:37.21,lng:28.36,bolge:"Ege",nufus:1002,rakim:655,deniz:0,denizMesafe:40,daglik:6,sicaklikOrt:17.5,kisSicaklik:7.5,yazSicaklik:27.5,yagis:1100,gunes:2900,nem:60,trafik:3,havaKalitesi:4,depremRiski:4,isImkanlari:5,saglik:6,egitim:5,sosyalYasam:7,ulasim:6,internet:60,yasamMaliyeti:7,yabanci:6,guvenlik:8},
+{id:49,name:"Muş",lat:38.74,lng:41.5,bolge:"Doğu Anadolu",nufus:399,rakim:1379,deniz:0,denizMesafe:420,daglik:8,sicaklikOrt:8.5,kisSicaklik:-4.5,yazSicaklik:22.0,yagis:780,gunes:2600,nem:55,trafik:2,havaKalitesi:4,depremRiski:4,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:28,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:50,name:"Nevşehir",lat:38.69,lng:34.69,bolge:"İç Anadolu",nufus:316,rakim:1263,deniz:0,denizMesafe:300,daglik:5,sicaklikOrt:11.0,kisSicaklik:0.0,yazSicaklik:22.5,yagis:400,gunes:2600,nem:58,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:4,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:2,guvenlik:8},
+{id:51,name:"Niğde",lat:37.97,lng:34.68,bolge:"İç Anadolu",nufus:351,rakim:1309,deniz:0,denizMesafe:260,daglik:6,sicaklikOrt:11.0,kisSicaklik:0.5,yazSicaklik:23.0,yagis:370,gunes:2600,nem:55,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:52,name:"Ordu",lat:40.98,lng:37.88,bolge:"Karadeniz",nufus:759,rakim:6,deniz:1,denizMesafe:0,daglik:7,sicaklikOrt:14.5,kisSicaklik:6.0,yazSicaklik:22.5,yagis:1050,gunes:1800,nem:72,trafik:3,havaKalitesi:4,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:53,name:"Rize",lat:41.02,lng:40.52,bolge:"Karadeniz",nufus:348,rakim:7,deniz:1,denizMesafe:0,daglik:9,sicaklikOrt:14.5,kisSicaklik:6.5,yazSicaklik:23.0,yagis:2300,gunes:1700,nem:75,trafik:3,havaKalitesi:3,depremRiski:3,isImkanlari:3,saglik:5,egitim:5,sosyalYasam:3,ulasim:5,internet:45,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:54,name:"Sakarya",lat:40.75,lng:30.39,bolge:"Marmara",nufus:1077,rakim:31,deniz:1,denizMesafe:0,daglik:3,sicaklikOrt:14.5,kisSicaklik:4.5,yazSicaklik:24.0,yagis:830,gunes:2200,nem:70,trafik:5,havaKalitesi:6,depremRiski:5,isImkanlari:6,saglik:6,egitim:6,sosyalYasam:5,ulasim:8,internet:70,yasamMaliyeti:5,yabanci:2,guvenlik:7},
+{id:55,name:"Samsun",lat:41.29,lng:36.33,bolge:"Karadeniz",nufus:1362,rakim:19,deniz:1,denizMesafe:0,daglik:5,sicaklikOrt:14.5,kisSicaklik:5.5,yazSicaklik:23.0,yagis:720,gunes:1900,nem:70,trafik:4,havaKalitesi:5,depremRiski:3,isImkanlari:5,saglik:6,egitim:6,sosyalYasam:5,ulasim:6,internet:55,yasamMaliyeti:4,yabanci:1,guvenlik:7},
+{id:56,name:"Siirt",lat:37.93,lng:41.94,bolge:"Güneydoğu",nufus:329,rakim:896,deniz:0,denizMesafe:380,daglik:8,sicaklikOrt:15.0,kisSicaklik:3.0,yazSicaklik:30.0,yagis:660,gunes:2800,nem:46,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:2,saglik:4,egitim:3,sosyalYasam:2,ulasim:3,internet:28,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:57,name:"Sinop",lat:42.02,lng:35.15,bolge:"Karadeniz",nufus:217,rakim:24,deniz:1,denizMesafe:0,daglik:6,sicaklikOrt:13.5,kisSicaklik:5.0,yazSicaklik:22.5,yagis:760,gunes:1900,nem:72,trafik:2,havaKalitesi:3,depremRiski:3,isImkanlari:2,saglik:4,egitim:4,sosyalYasam:3,ulasim:4,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:58,name:"Sivas",lat:39.75,lng:37.02,bolge:"İç Anadolu",nufus:636,rakim:1285,deniz:0,denizMesafe:280,daglik:7,sicaklikOrt:8.5,kisSicaklik:-2.5,yazSicaklik:20.5,yagis:430,gunes:2500,nem:62,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:4,saglik:6,egitim:6,sosyalYasam:4,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:59,name:"Tekirdağ",lat:40.98,lng:27.51,bolge:"Marmara",nufus:1108,rakim:13,deniz:1,denizMesafe:0,daglik:3,sicaklikOrt:14.0,kisSicaklik:4.0,yazSicaklik:24.5,yagis:600,gunes:2400,nem:68,trafik:5,havaKalitesi:6,depremRiski:3,isImkanlari:6,saglik:6,egitim:5,sosyalYasam:5,ulasim:8,internet:70,yasamMaliyeti:5,yabanci:2,guvenlik:7},
+{id:60,name:"Tokat",lat:40.32,lng:36.55,bolge:"Karadeniz",nufus:596,rakim:623,deniz:0,denizMesafe:170,daglik:7,sicaklikOrt:12.5,kisSicaklik:1.0,yazSicaklik:23.5,yagis:440,gunes:2200,nem:62,trafik:3,havaKalitesi:5,depremRiski:3,isImkanlari:3,saglik:5,egitim:5,sosyalYasam:3,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:61,name:"Trabzon",lat:41.0,lng:39.73,bolge:"Karadeniz",nufus:818,rakim:30,deniz:1,denizMesafe:0,daglik:7,sicaklikOrt:14.8,kisSicaklik:6.5,yazSicaklik:23.5,yagis:830,gunes:1900,nem:72,trafik:4,havaKalitesi:5,depremRiski:3,isImkanlari:5,saglik:6,egitim:6,sosyalYasam:5,ulasim:6,internet:55,yasamMaliyeti:4,yabanci:1,guvenlik:7},
+{id:62,name:"Tunceli",lat:39.11,lng:39.54,bolge:"Doğu Anadolu",nufus:84,rakim:981,deniz:0,denizMesafe:330,daglik:9,sicaklikOrt:11.0,kisSicaklik:-0.5,yazSicaklik:24.0,yagis:550,gunes:2600,nem:54,trafik:1,havaKalitesi:2,depremRiski:4,isImkanlari:1,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:63,name:"Şanlıurfa",lat:37.17,lng:38.79,bolge:"Güneydoğu",nufus:2151,rakim:485,deniz:0,denizMesafe:340,daglik:4,sicaklikOrt:18.5,kisSicaklik:5.5,yazSicaklik:32.0,yagis:440,gunes:3000,nem:40,trafik:4,havaKalitesi:6,depremRiski:3,isImkanlari:5,saglik:6,egitim:5,sosyalYasam:5,ulasim:6,internet:50,yasamMaliyeti:3,yabanci:1,guvenlik:6},
+{id:64,name:"Uşak",lat:38.67,lng:29.4,bolge:"Ege",nufus:371,rakim:907,deniz:0,denizMesafe:200,daglik:5,sicaklikOrt:13.0,kisSicaklik:2.5,yazSicaklik:24.0,yagis:470,gunes:2500,nem:60,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:4,saglik:5,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:65,name:"Van",lat:38.49,lng:43.38,bolge:"Doğu Anadolu",nufus:1132,rakim:1727,deniz:0,denizMesafe:430,daglik:8,sicaklikOrt:8.5,kisSicaklik:-3.5,yazSicaklik:22.5,yagis:390,gunes:2800,nem:52,trafik:3,havaKalitesi:5,depremRiski:4,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:4,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:6},
+{id:66,name:"Yozgat",lat:39.82,lng:34.81,bolge:"İç Anadolu",nufus:397,rakim:1298,deniz:0,denizMesafe:280,daglik:6,sicaklikOrt:9.5,kisSicaklik:-1.0,yazSicaklik:21.0,yagis:440,gunes:2500,nem:60,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:4,egitim:4,sosyalYasam:2,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:67,name:"Zonguldak",lat:41.46,lng:31.79,bolge:"Karadeniz",nufus:591,rakim:130,deniz:1,denizMesafe:0,daglik:6,sicaklikOrt:13.5,kisSicaklik:4.5,yazSicaklik:22.5,yagis:950,gunes:1900,nem:72,trafik:3,havaKalitesi:7,depremRiski:3,isImkanlari:4,saglik:5,egitim:5,sosyalYasam:4,ulasim:6,internet:45,yasamMaliyeti:4,yabanci:1,guvenlik:8},
+{id:68,name:"Aksaray",lat:38.37,lng:34.03,bolge:"İç Anadolu",nufus:429,rakim:980,deniz:0,denizMesafe:260,daglik:5,sicaklikOrt:12.5,kisSicaklik:1.5,yazSicaklik:24.0,yagis:370,gunes:2700,nem:55,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:1,guvenlik:8},
+{id:69,name:"Bayburt",lat:40.23,lng:40.23,bolge:"Karadeniz",nufus:84,rakim:1420,deniz:0,denizMesafe:180,daglik:9,sicaklikOrt:8.0,kisSicaklik:-3.5,yazSicaklik:20.5,yagis:430,gunes:2300,nem:62,trafik:1,havaKalitesi:3,depremRiski:4,isImkanlari:1,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:25,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:70,name:"Karaman",lat:37.18,lng:33.22,bolge:"İç Anadolu",nufus:264,rakim:1039,deniz:0,denizMesafe:230,daglik:5,sicaklikOrt:12.0,kisSicaklik:1.0,yazSicaklik:24.0,yagis:340,gunes:2750,nem:55,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:71,name:"Kırıkkale",lat:39.85,lng:33.51,bolge:"İç Anadolu",nufus:289,rakim:692,deniz:0,denizMesafe:300,daglik:4,sicaklikOrt:12.0,kisSicaklik:0.5,yazSicaklik:23.5,yagis:390,gunes:2400,nem:58,trafik:3,havaKalitesi:6,depremRiski:3,isImkanlari:4,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:72,name:"Batman",lat:37.88,lng:41.13,bolge:"Güneydoğu",nufus:633,rakim:540,deniz:0,denizMesafe:360,daglik:6,sicaklikOrt:16.5,kisSicaklik:4.0,yazSicaklik:31.5,yagis:520,gunes:2850,nem:44,trafik:3,havaKalitesi:6,depremRiski:3,isImkanlari:4,saglik:5,egitim:4,sosyalYasam:3,ulasim:5,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:6},
+{id:73,name:"Şırnak",lat:37.52,lng:42.45,bolge:"Güneydoğu",nufus:245,rakim:1376,deniz:0,denizMesafe:450,daglik:9,sicaklikOrt:15.0,kisSicaklik:2.5,yazSicaklik:31.0,yagis:850,gunes:2900,nem:44,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:1,saglik:3,egitim:3,sosyalYasam:2,ulasim:2,internet:25,yasamMaliyeti:3,yabanci:0,guvenlik:6},
+{id:74,name:"Bartın",lat:41.64,lng:32.34,bolge:"Karadeniz",nufus:194,rakim:25,deniz:1,denizMesafe:0,daglik:5,sicaklikOrt:13.5,kisSicaklik:4.5,yazSicaklik:22.5,yagis:900,gunes:1950,nem:72,trafik:2,havaKalitesi:4,depremRiski:3,isImkanlari:2,saglik:4,egitim:4,sosyalYasam:3,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:75,name:"Ardahan",lat:41.11,lng:42.7,bolge:"Doğu Anadolu",nufus:91,rakim:1829,deniz:0,denizMesafe:380,daglik:9,sicaklikOrt:4.5,kisSicaklik:-9.5,yazSicaklik:18.5,yagis:540,gunes:2400,nem:62,trafik:1,havaKalitesi:2,depremRiski:3,isImkanlari:1,saglik:3,egitim:3,sosyalYasam:2,ulasim:2,internet:25,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:76,name:"Iğdır",lat:39.92,lng:44.05,bolge:"Doğu Anadolu",nufus:196,rakim:858,deniz:0,denizMesafe:480,daglik:6,sicaklikOrt:12.0,kisSicaklik:-2.5,yazSicaklik:25.5,yagis:280,gunes:2700,nem:50,trafik:2,havaKalitesi:8,depremRiski:4,isImkanlari:2,saglik:3,egitim:3,sosyalYasam:2,ulasim:3,internet:30,yasamMaliyeti:3,yabanci:0,guvenlik:7},
+{id:77,name:"Yalova",lat:40.65,lng:29.27,bolge:"Marmara",nufus:265,rakim:4,deniz:1,denizMesafe:0,daglik:4,sicaklikOrt:14.8,kisSicaklik:5.5,yazSicaklik:24.5,yagis:730,gunes:2300,nem:70,trafik:3,havaKalitesi:5,depremRiski:4,isImkanlari:4,saglik:5,egitim:4,sosyalYasam:5,ulasim:7,internet:60,yasamMaliyeti:5,yabanci:2,guvenlik:7},
+{id:78,name:"Karabük",lat:41.21,lng:32.64,bolge:"Karadeniz",nufus:240,rakim:220,deniz:0,denizMesafe:110,daglik:6,sicaklikOrt:13.0,kisSicaklik:2.5,yazSicaklik:23.5,yagis:540,gunes:2100,nem:66,trafik:2,havaKalitesi:6,depremRiski:3,isImkanlari:3,saglik:4,egitim:4,sosyalYasam:3,ulasim:6,internet:40,yasamMaliyeti:3,yabanci:0,guvenlik:8},
+{id:79,name:"Kilis",lat:36.72,lng:37.11,bolge:"Güneydoğu",nufus:147,rakim:638,deniz:0,denizMesafe:200,daglik:4,sicaklikOrt:17.5,kisSicaklik:6.0,yazSicaklik:30.0,yagis:520,gunes:2900,nem:50,trafik:2,havaKalitesi:5,depremRiski:3,isImkanlari:2,saglik:4,egitim:3,sosyalYasam:3,ulasim:5,internet:35,yasamMaliyeti:3,yabanci:1,guvenlik:6},
+{id:80,name:"Osmaniye",lat:37.07,lng:36.25,bolge:"Akdeniz",nufus:566,rakim:93,deniz:0,denizMesafe:25,daglik:4,sicaklikOrt:18.8,kisSicaklik:9.0,yazSicaklik:29.0,yagis:950,gunes:2750,nem:64,trafik:3,havaKalitesi:6,depremRiski:4,isImkanlari:4,saglik:5,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:4,yabanci:1,guvenlik:7},
+{id:81,name:"Düzce",lat:40.84,lng:31.16,bolge:"Karadeniz",nufus:405,rakim:144,deniz:0,denizMesafe:25,daglik:5,sicaklikOrt:13.5,kisSicaklik:4.0,yazSicaklik:23.0,yagis:850,gunes:2000,nem:70,trafik:3,havaKalitesi:5,depremRiski:4,isImkanlari:4,saglik:5,egitim:4,sosyalYasam:3,ulasim:6,internet:45,yasamMaliyeti:3,yabanci:1,guvenlik:8}
+];
+
+/* ============================================================
+   FİLTRE TANIMLARI
+   ============================================================ */
+const FILTERS = [
+  {grp:"🌍 Coğrafi", open:true, items:[
+    {key:"deniz", label:"Deniz kenarı", type:"tri", opts:["farketmez","evet","hayır"]},
+    {key:"denizMesafe", label:"Denize mesafe", type:"range", min:0, max:600, step:10, unit:"km", lower:true, hint:"Küçük = denize yakın (tüm il dahil)"},
+    {key:"rakim", label:"Rakım", type:"range", min:0, max:2000, step:50, unit:"m"},
+    {key:"daglik", label:"Dağlık/arazi", type:"range", min:0, max:10, step:1, unit:"/10"},
+  ]},
+  {grp:"🌡️ İklim", open:true, items:[
+    {key:"sicaklikOrt", label:"Yıllık ort. sıcaklık", type:"range", min:4, max:20, step:0.5, unit:"°C"},
+    {key:"kisSicaklik", label:"Kış sıcaklığı (Ocak)", type:"range", min:-10, max:12, step:0.5, unit:"°C"},
+    {key:"yazSicaklik", label:"Yaz sıcaklığı (Temmuz)", type:"range", min:18, max:33, step:0.5, unit:"°C"},
+    {key:"yagis", label:"Yıllık yağış", type:"range", min:280, max:2400, step:50, unit:"mm", lower:true},
+    {key:"gunes", label:"Güneş süresi", type:"range", min:1600, max:3000, step:50, unit:"s/yıl"},
+    {key:"nem", label:"Nem oranı", type:"range", min:40, max:80, step:1, unit:"%", lower:true},
+  ]},
+  {grp:"👥 Demografi", open:false, items:[
+    {key:"nufus", label:"Nüfus (bin)", type:"range", min:80, max:16000, step:80, unit:"bin", log:true},
+    {key:"yabanci", label:"Yabancı nüfus oranı", type:"range", min:0, max:10, step:0.5, unit:"%", lower:true},
+  ]},
+  {grp:"🏙️ Yaşam Kalitesi", open:false, items:[
+    {key:"isImkanlari", label:"İş / ekonomi", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"saglik", label:"Sağlık hizmetleri", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"egitim", label:"Eğitim", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"sosyalYasam", label:"Sosyal yaşam / kültür", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"ulasim", label:"Ulaşım / altyapı", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"guvenlik", label:"Güvenlik", type:"range", min:0, max:10, step:1, unit:"/10"},
+    {key:"internet", label:"İnternet hızı", type:"range", min:20, max:100, step:5, unit:"Mbps"},
+  ]},
+  {grp:"💰 Maliyet", open:false, items:[
+    {key:"yasamMaliyeti", label:"Yaşam maliyeti", type:"range", min:0, max:10, step:1, unit:"/10", lower:true, hint:"Küçük = uygun fiyatlı"},
+  ]},
+  {grp:"⚠️ Riskler (düşük iyi)", open:false, items:[
+    {key:"depremRiski", label:"Deprem riski", type:"range", min:0, max:5, step:1, unit:"/5", lower:true},
+    {key:"trafik", label:"Trafik yoğunluğu", type:"range", min:0, max:10, step:1, unit:"/10", lower:true},
+    {key:"havaKalitesi", label:"Hava kirliliği", type:"range", min:0, max:10, step:1, unit:"/10", lower:true},
+  ]},
+  {grp:"🌐 Bölge", open:false, items:[
+    {key:"bolge", label:"Bölgeler", type:"checks", opts:["Marmara","Ege","Akdeniz","İç Anadolu","Karadeniz","Doğu Anadolu","Güneydoğu"]}
+  ]},
+];
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let state = {};      // filter values
+let strictMode = true;
+const markers = {};
+
+/* ============================================================
+   ARAYÜZ KURULUMU
+   ============================================================ */
+function fmtNum(v, unit){
+  if(unit==="bin") return (v>=1000? (v/1000).toFixed(v%1000?1:0)+"M" : v+"K");
+  return v + (unit? " "+unit : "");
+}
+function fmtRange(f){
+  const lo = state[f.key].min, hi = state[f.key].max;
+  if(f.log){
+    return fmtNum(lo,"bin")+" – "+fmtNum(hi,"bin");
+  }
+  return (f.type==="range" && lo===f.min && hi===f.max) ? "Tümü" : (lo+" – "+hi+(f.unit?" "+f.unit:""));
+}
+
+function buildFilters(){
+  const cont = document.getElementById('filters');
+  cont.innerHTML = "";
+  FILTERS.forEach((g,gi)=>{
+    const grp = document.createElement('div');
+    grp.className = 'grp' + (g.open?' open':'');
+    grp.innerHTML = `<div class="grp-head"><span class="ico">${g.grp.split(' ')[0]}</span><span>${g.grp.substring(g.grp.indexOf(' ')+1)}</span><span class="chev">▶</span></div>`;
+    const body = document.createElement('div');
+    body.className = 'grp-body';
+    g.items.forEach(f=>{
+      if(f.type==="range"){
+        state[f.key] = {min:f.min, max:f.max};
+        const fe = document.createElement('div');
+        fe.className = 'filter';
+        fe.innerHTML = `
+          <div class="f-head"><span class="f-label">${f.label}</span><span class="f-val default" id="v_${f.key}">Tümü</span></div>
+          ${f.hint?`<div class="hint">${f.hint}</div>`:''}
+          <div class="range-wrap">
+            <div class="range-track"><div class="range-fill" id="fill_${f.key}"></div></div>
+            <input type="range" class="r-min" id="min_${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.min}">
+            <input type="range" class="r-max" id="max_${f.key}" min="${f.min}" max="${f.max}" step="${f.step}" value="${f.max}">
+          </div>`;
+        body.appendChild(fe);
+      } else if(f.type==="tri"){
+        state[f.key] = 0;
+        const fe = document.createElement('div');
+        fe.className = 'filter';
+        fe.innerHTML = `
+          <div class="f-head"><span class="f-label">${f.label}</span></div>
+          <div class="tri" id="tri_${f.key}">
+            ${f.opts.map((o,i)=>`<button data-i="${i}" class="${i===0?'sel':''}">${o}</button>`).join('')}
+          </div>`;
+        body.appendChild(fe);
+      } else if(f.type==="checks"){
+        state[f.key] = new Set(f.opts);
+        const fe = document.createElement('div');
+        fe.className = 'filter';
+        fe.innerHTML = `
+          <div class="f-head"><span class="f-label">${f.label}</span></div>
+          <div class="checks" id="chk_${f.key}">
+            ${f.opts.map(o=>`<label><input type="checkbox" value="${o}" checked> ${o}</label>`).join('')}
+          </div>`;
+        body.appendChild(fe);
+      }
+    });
+    grp.appendChild(body);
+    grp.querySelector('.grp-head').addEventListener('click', ()=> grp.classList.toggle('open'));
+    cont.appendChild(grp);
+  });
+  wireFilters();
+}
+
+function wireFilters(){
+  FILTERS.forEach(g=>g.items.forEach(f=>{
+    if(f.type==="range"){
+      const minI=document.getElementById('min_'+f.key);
+      const maxI=document.getElementById('max_'+f.key);
+      const fill=document.getElementById('fill_'+f.key);
+      const val=document.getElementById('v_'+f.key);
+      const span=f.max-f.min;
+      const upd=()=>{
+        let lo=+minI.value, hi=+maxI.value;
+        if(lo>hi- (f.step||1)){ if(this===minI) maxI.value=lo; else minI.value=hi; lo=+minI.value; hi=+maxI.value; }
+        // overlap guard
+        if(lo>hi){ [lo,hi]=[hi,lo]; }
+        state[f.key]={min:lo,max:hi};
+        const lp=(lo-f.min)/span*100, hp=(hi-f.min)/span*100;
+        fill.style.left=lp+'%'; fill.style.width=(hp-lp)+'%';
+        const isDef=(lo===f.min && hi===f.max);
+        val.textContent=isDef?'Tümü':fmtRange(f);
+        val.classList.toggle('default',isDef);
+        update();
+      };
+      const updMin=()=>{ if(+minI.value>+maxI.value-(f.step||1)) minI.value=+maxI.value-(f.step||1); upd(); };
+      const updMax=()=>{ if(+maxI.value<+minI.value+(f.step||1)) maxI.value=+minI.value+(f.step||1); upd(); };
+      minI.addEventListener('input',updMin);
+      maxI.addEventListener('input',updMax);
+      // init fill
+      fill.style.left='0%'; fill.style.width='100%';
+    } else if(f.type==="tri"){
+      const box=document.getElementById('tri_'+f.key);
+      box.querySelectorAll('button').forEach(b=>{
+        b.addEventListener('click',()=>{
+          box.querySelectorAll('button').forEach(x=>x.classList.remove('sel'));
+          b.classList.add('sel');
+          state[f.key]=+b.dataset.i;
+          update();
+        });
+      });
+    } else if(f.type==="checks"){
+      const box=document.getElementById('chk_'+f.key);
+      box.querySelectorAll('input').forEach(c=>{
+        c.addEventListener('change',()=>{
+          const s=new Set();
+          box.querySelectorAll('input:checked').forEach(x=>s.add(x.value));
+          state[f.key]=s;
+          update();
+        });
+      });
+    }
+  }));
+}
+
+/* ============================================================
+   FİLTRELEME & SKOR
+   ============================================================ */
+function evalCity(c){
+  let activeFilters=0, passed=0;
+  const reasons=[];
+  FILTERS.forEach(g=>g.items.forEach(f=>{
+    if(f.type==="range"){
+      const v=c[f.key];
+      const st=state[f.key];
+      const isDef=(st.min===f.min && st.max===f.max);
+      if(isDef) return; // pasif
+      activeFilters++;
+      if(v>=st.min && v<=st.max){ passed++; }
+      else reasons.push(f.label);
+    } else if(f.type==="tri"){
+      if(state[f.key]===0) return; // farketmez
+      activeFilters++;
+      const want = state[f.key]===1?1:0;
+      if(c[f.key]===want) passed++;
+      else reasons.push(f.label);
+    } else if(f.type==="checks"){
+      const st=state[f.key];
+      if(st.size===f.opts.length) return; // hepsi seçili = pasif
+      activeFilters++;
+      if(st.has(c[f.key])) passed++;
+      else reasons.push(f.label);
+    }
+  }));
+  const score = activeFilters===0 ? 100 : Math.round(passed/activeFilters*100);
+  const eligible = activeFilters===0 ? true : (strictMode ? (passed===activeFilters) : true);
+  return {score, passed, activeFilters, eligible, reasons};
+}
+
+function colorFor(score, eligible){
+  if(strictMode && !eligible) return '#64748b';
+  if(score>=80) return '#16a34a';
+  if(score>=60) return '#84cc16';
+  if(score>=40) return '#eab308';
+  return '#94a3b8';
+}
+
+/* ============================================================
+   HARİTA
+   ============================================================ */
+const map = L.map('map',{zoomControl:true, minZoom:5, maxZoom:11, worldCopyJump:false}).setView([39.0,35.5], 6);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  attribution:'© OpenStreetMap © Carto', subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+function sizeFor(nufus){
+  if(nufus>=10000) return 34;
+  if(nufus>=3000) return 28;
+  if(nufus>=1000) return 22;
+  if(nufus>=400) return 18;
+  if(nufus>=150) return 15;
+  return 12;
+}
+
+CITIES.forEach(c=>{
+  const size=sizeFor(c.nufus);
+  const icon = L.divIcon({
+    className:'',
+    html:`<div class="city-marker" style="width:${size}px;height:${size}px;font-size:${Math.max(8,size/2.5)}px;background:#3b82f6">${c.name[0]}</div>`,
+    iconSize:[size,size], iconAnchor:[size/2,size/2]
+  });
+  const mk = L.marker([c.lat,c.lng],{icon}).addTo(map);
+  markers[c.id]=mk;
+  mk.on('click',()=>focusCity(c.id));
+});
+
+function popupHtml(c, res){
+  const col=colorFor(res.score,res.eligible);
+  const cls = c.deniz? '🌊 ':'';
+  const rows = [
+    ['Nüfus', fmtNum(c.nufus,'bin')],
+    ['Bölge', c.bolge],
+    ['Rakım', c.rakim+' m'],
+    ['Deniz', c.deniz? 'Evet ('+c.denizMesafe+' km)' : (c.denizMesafe+' km')],
+    ['Dağlık', c.daglik+'/10'],
+    ['Yıllık sıc.', c.sicaklikOrt+' °C'],
+    ['Kış / Yaz', c.kisSicaklik+'° / '+c.yazSicaklik+'°'],
+    ['Yağış', c.yagis+' mm'],
+    ['Güneş', c.gunes+' s/yıl'],
+    ['Nem', c.nem+'%'],
+    ['İş', c.isImkanlari+'/10'],
+    ['Sağlık', c.saglik+'/10'],
+    ['Eğitim', c.egitim+'/10'],
+    ['Sosyal', c.sosyalYasam+'/10'],
+    ['Ulaşım', c.ulasim+'/10'],
+    ['İnternet', c.internet+' Mbps'],
+    ['Maliyet', c.yasamMaliyeti+'/10'],
+    ['Deprem', c.depremRiski+'/5'],
+    ['Trafik', c.trafik+'/10'],
+    ['Hava kal.', c.havaKalitesi+'/10'],
+    ['Güvenlik', c.guvenlik+'/10'],
+  ];
+  const grid = rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  return `<div class="pop">
+    <h3>${cls}${c.name}</h3>
+    <div class="region">${c.bolge} • ${fmtNum(c.nufus,'bin')} nüfus</div>
+    <div class="scoretxt"><span>Uyum skoru</span><b style="color:${col}">%${res.score} ${res.eligible?'':'(elendi)'}</b></div>
+    <div class="scorebar"><div class="scorefill" style="width:${res.score}%;background:${col}"></div></div>
+    ${res.reasons.length?`<div style="font-size:10px;color:var(--muted)">Uymayan: ${res.reasons.join(', ')}</div>`:''}
+    <div class="grid">${grid}</div>
+  </div>`;
+}
+
+/* ============================================================
+   ANA GÜNCELLEME
+   ============================================================ */
+function update(){
+  const results = CITIES.map(c=>({c, res:evalCity(c)}));
+  // aktif filtre sayısı
+  let activeCount=0;
+  FILTERS.forEach(g=>g.items.forEach(f=>{
+    if(f.type==="range"){ const st=state[f.key]; if(!(st.min===f.min&&st.max===f.max)) activeCount++; }
+    else if(f.type==="tri"){ if(state[f.key]!==0) activeCount++; }
+    else if(f.type==="checks"){ if(state[f.key].size!==f.opts.length) activeCount++; }
+  }));
+  document.getElementById('cntActive').textContent=activeCount;
+
+  // markerları güncelle
+  let matchCount=0, bestCount=0;
+  results.forEach(({c,res})=>{
+    const col=colorFor(res.score,res.eligible);
+    const visible = !strictMode || res.eligible;
+    const mk=markers[c.id];
+    const size=sizeFor(c.nufus);
+    const op = visible?1:0.25;
+    mk.setOpacity(op);
+    mk.setIcon(L.divIcon({
+      className:'',
+      html:`<div class="city-marker" style="width:${size}px;height:${size}px;font-size:${Math.max(8,size/2.5)}px;background:${col};opacity:${op}">${c.name[0]}</div>`,
+      iconSize:[size,size], iconAnchor:[size/2,size/2]
+    }));
+    mk.unbindPopup();
+    mk.bindPopup(popupHtml(c,res));
+    if(res.eligible) matchCount++;
+    if(res.eligible && res.score>=80) bestCount++;
+  });
+
+  document.getElementById('cntMatch').textContent=matchCount;
+  document.getElementById('cntBest').textContent=bestCount;
+}
+
+function focusCity(id){
+  const c=CITIES.find(x=>x.id===id);
+  map.flyTo([c.lat,c.lng],9,{duration:.8});
+  setTimeout(()=>markers[id].openPopup(),500);
+}
+
+/* ============================================================
+   KONTROLLER
+   ============================================================ */
+document.getElementById('btnReset').addEventListener('click',()=>{
+  buildFilters();
+  update();
+});
+document.getElementById('btnStrict').addEventListener('click',function(){
+  strictMode=!strictMode;
+  this.classList.toggle('active',strictMode);
+  this.textContent = strictMode? '✔ Sadece uygun' : '⚎ Tümünü göster';
+  update();
+});
+document.getElementById('toggleSb').addEventListener('click',()=>{
+  document.getElementById('sidebar').classList.toggle('show');
+});
+
+/* ============================================================
+   BAŞLAT
+   ============================================================ */
+buildFilters();
+update();
+</script>
+</body>
+</html>

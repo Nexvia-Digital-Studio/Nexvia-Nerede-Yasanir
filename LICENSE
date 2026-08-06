@@ -1,0 +1,14 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2026 Nexvia Digital Studio / Batuhan Akcan
+
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
+
+Preamble
+The GNU Affero General Public License is a free, copyleft license for software and other kinds of works, specifically designed to ensure cooperation with the community in the case of network server software.
+
+SPECIAL COMMERCIAL & DERIVATIVE RESTRICTION CLAUSE:
+This software is an open-source project. You are free to view, study, and modify it for non-commercial or personal use. However, if this codebase or any derivative work is used commercially or to generate revenue (including SaaS, paid services, or commercial deployments), all modified source code, infrastructure code, and derivative versions MUST be made fully open-source under the GNU AGPLv3 license. Closed-source, proprietary, or private commercial usage as a backend infrastructure is strictly prohibited without explicit open-sourcing of the entire derivative codebase.
+
+For full AGPL-3.0 license terms: https://www.gnu.org/licenses/agpl-3.0.html
