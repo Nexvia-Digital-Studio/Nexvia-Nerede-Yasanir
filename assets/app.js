@@ -563,13 +563,7 @@ const CITY_PHOTOS = {
 function getCityPhotoUrl(city){
   const slug = slugify(city.ad);
   if(CITY_PHOTOS[slug]) return CITY_PHOTOS[slug];
-  if(Number(city.deniz) === 1) return CITY_PHOTOS['ege'];
-  
-  const bolgeSlug = slugify(city.bolge || '');
-  if(CITY_PHOTOS[bolgeSlug]) return CITY_PHOTOS[bolgeSlug];
-
-  if((city.rakim||0) > 600) return CITY_PHOTOS['dogu'];
-  return CITY_PHOTOS['ic_anadolu'];
+  return 'assets/story_bg.jpg';
 }
 
 function openShareModal(city, score){
@@ -585,65 +579,102 @@ function openShareModal(city, score){
   img.crossOrigin = 'anonymous';
 
   const renderCanvasContent = () => {
+    // 1. Arka plan görseli
     ctx.drawImage(img, 0, 0, w, h);
 
+    // 2. Koyu Lüks Degrade Katmanı
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, 'rgba(15, 23, 42, 0.78)');
-    grad.addColorStop(0.4, 'rgba(15, 23, 42, 0.58)');
-    grad.addColorStop(1, 'rgba(15, 23, 42, 0.94)');
+    grad.addColorStop(0, 'rgba(15, 23, 42, 0.85)');
+    grad.addColorStop(0.35, 'rgba(15, 23, 42, 0.65)');
+    grad.addColorStop(0.75, 'rgba(15, 23, 42, 0.90)');
+    grad.addColorStop(1, 'rgba(15, 23, 42, 0.96)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
+    // 3. Üst Başlık & Marka
     ctx.fillStyle = '#60a5fa';
-    ctx.font = 'bold 22px sans-serif';
+    ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Yaşam Haritası', w/2, 70);
+    ctx.fillText('Yaşam Haritası', w/2, 68);
 
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '14px sans-serif';
-    ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 100);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '600 14px sans-serif';
+    ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 98);
 
     const isIlce = !!city.il_id;
     const ilName = isIlce ? (RAW.iller.find(i=>i.id===city.il_id)?.ad || '') : '';
     const name = isIlce ? `${city.ad}` : city.ad;
     const subName = isIlce ? `${ilName} ili` : (city.bolge || 'Türkiye');
 
+    // 4. Neon Parlayan Uyum Skoru Dairesi
+    const centerX = w/2;
+    const centerY = 255;
+    const radius = 95;
+
+    // Dış Parlama (Neon Halo)
+    ctx.save();
     ctx.beginPath();
-    ctx.arc(w/2, 270, 105, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.70)';
+    ctx.arc(centerX, centerY, radius + 6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(34, 197, 94, 0.25)';
     ctx.fill();
-    ctx.strokeStyle = '#22c55e';
-    ctx.lineWidth = 4;
+
+    // İç Koyu Daire
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+    ctx.fill();
+
+    // Yeşil Neon Çerçeve
+    ctx.strokeStyle = '#4ade80';
+    ctx.lineWidth = 5;
     ctx.stroke();
+    ctx.restore();
 
-    ctx.fillStyle = '#22c55e';
-    ctx.font = 'bold 54px sans-serif';
-    ctx.fillText(`%${score}`, w/2, 260);
+    // Skor Yazısı (%100)
+    ctx.fillStyle = '#4ade80';
+    ctx.font = 'bold 56px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`%${score}`, centerX, centerY + 12);
+
     ctx.fillStyle = '#f8fafc';
-    ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('UYUM SKORU', w/2, 300);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('UYUM SKORU', centerX, centerY + 42);
 
+    // 5. Şehir İsim Başlığı
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 36px sans-serif';
-    ctx.shadowColor = 'rgba(0,0,0,0.8)';
-    ctx.shadowBlur = 10;
-    ctx.fillText(name, w/2, 450);
+    ctx.font = 'bold 42px sans-serif';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 14;
+    ctx.fillText(name, w/2, 420);
 
     ctx.fillStyle = '#93c5fd';
-    ctx.font = '18px sans-serif';
-    ctx.fillText(subName, w/2, 485);
+    ctx.font = '700 20px sans-serif';
+    ctx.fillText(subName, w/2, 458);
 
     ctx.shadowBlur = 0;
 
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
-    if (ctx.roundRect) ctx.roundRect(40, 530, w - 80, 240, 16); else ctx.fillRect(40, 530, w - 80, 240);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // 6. Cam Efektli İstatistik Paneli (Glassmorphic Box)
+    const boxX = 36;
+    const boxY = 500;
+    const boxW = w - 72;
+    const boxH = 260;
+    const radiusBox = 20;
 
-    ctx.fillStyle = '#f8fafc';
-    ctx.font = '15px sans-serif';
+    ctx.save();
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(boxX, boxY, boxW, boxH, radiusBox);
+    else ctx.rect(boxX, boxY, boxW, boxH);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(96, 165, 250, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    // 7. İstatistik Metinleri
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '600 16px sans-serif';
     ctx.textAlign = 'left';
 
     const stats = [
@@ -651,27 +682,26 @@ function openShareModal(city, score){
       `Sosyal İmkânlar: ${city.sosyalImkan || 7}/10`,
       `Gece Hayatı & Eğlence: ${city.eglence || 6}/10`,
       `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
-      `Deniz Konumu: ${Number(city.deniz)===1 ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`
+      `Deniz Konumu: ${Number(city.deniz)===1 ? 'Sahil Kıyısında' : (city.denizMesafe+' km uzaklıkta')}`
     ];
 
     stats.forEach((s, idx) => {
-      ctx.fillText(s, 65, 570 + (idx * 40));
+      ctx.fillText(s, boxX + 24, boxY + 45 + (idx * 44));
     });
 
+    // 8. Alt Bilgi / Web Linki
     ctx.fillStyle = '#cbd5e1';
-    ctx.font = '13px sans-serif';
+    ctx.font = '600 14px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Sen de kendi ruh şehrini keşfet: nexviastudio.com', w/2, 885);
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '11px sans-serif';
+    ctx.font = '12px sans-serif';
     ctx.fillText('Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 915);
   };
 
   img.onload = renderCanvasContent;
   img.onerror = () => {
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, w, h);
-    renderCanvasContent();
+    img.src = 'assets/story_bg.jpg';
   };
   img.src = photoUrl;
 }
