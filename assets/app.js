@@ -1424,7 +1424,7 @@ function popupHtml(c, res, type){
     ['Mutfak / Gastro', c.gastro!=null? c.gastro+'/10' : '—', 'utensils'],
     ['Emeklilik', c.emeklilik!=null? c.emeklilik+'/10' : '—', 'sun'],
     ['Nüfus', c.nufus? fmtNum(c.nufus,'bin') : '—', 'users'],
-    ['Deniz Konumu', Number(c.deniz)===1? 'Evet (Sahil)' : (c.denizMesafe+' km'), 'waves'],
+    ['Deniz Kıyısı', Number(c.deniz)===1? 'Evet (Sahil)' : (c.denizMesafe+' km'), 'waves'],
     ['Yıllık sıc.', c.yillik_sicaklik!=null? c.yillik_sicaklik+' °C' : '—', 'thermometer'],
     ['Kış / Yaz', (c.kis_sicaklik!=null?c.kis_sicaklik:'?')+'° / '+(c.yaz_sicaklik!=null?c.yaz_sicaklik+'°':'?'), 'thermometer'],
     ['Sağlık', c.saglik!=null? c.saglik+'/10' : '—', 'heart'],
