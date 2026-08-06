@@ -1,6 +1,6 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Quiz, Beni Şaşırt, Instagram Hikaye Kartı, Karşılaştırma, Favoriler, Davet Linki)
+   (Hard Constraint Sert Filtreleme, Window Action Handlers, Quiz, Beni Şaşırt, Canvas, Compare)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
@@ -101,17 +101,54 @@ function saveFavs(){
 }
 saveFavs();
 
-function toggleFav(id, type){
+const markersIl = {};     // id → marker
+const markersIlce = {};   // id → marker
+
+/* ============================================================
+   WINDOW GLOBAL HELPER FUNCTIONS (HER YERDEN ÇAĞRILABİLİR)
+   ============================================================ */
+window.appToggleFav = function(id, type){
   const key = `${type}_${id}`;
   if(favorites.has(key)) favorites.delete(key);
   else favorites.add(key);
   saveFavs();
   update();
   renderFavsList();
-}
+};
 
-const markersIl = {};     // id → marker
-const markersIlce = {};   // id → marker
+window.appOpenQuiz = function(){
+  startQuiz();
+};
+
+window.appOpenSurprise = function(){
+  document.getElementById('btnSurprise')?.click();
+};
+
+window.appOpenFavs = function(){
+  renderFavsList();
+  document.getElementById('favsModal')?.classList.add('show');
+};
+
+window.appOpenCompare = function(){
+  populateCompareSelects();
+  document.getElementById('compareModal')?.classList.add('show');
+};
+
+window.appOpenAbout = function(){
+  document.getElementById('aboutBackdrop')?.classList.add('show');
+};
+
+window.appShareCity = function(id, type){
+  const item = type==='il' ? RAW.iller.find(i=>i.id==+id) : RAW.ilceler.find(d=>d.id==+id);
+  if(item){
+    const res = evalCity(item);
+    openShareModal(item, res.score);
+  }
+};
+
+window.appCopyLink = function(cityName){
+  copyInviteLink(cityName);
+};
 
 /* ============================================================
    TEMA (AÇIK / KARANLIK MOD) & TILE LAYERS
@@ -148,18 +185,6 @@ document.getElementById('btnToggleNames').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   BEN KİMİM & GÖNÜLLÜ PROJE MODALI (NEXVIA DIGITAL STUDIO & BATUHAN AKCAN)
-   ============================================================ */
-const aboutBackdrop = document.getElementById('aboutBackdrop');
-function openAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.add('show'); }
-function closeAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.remove('show'); }
-['btnAbout', 'triggerAbout', 'footerAbout'].forEach(id=>{
-  document.getElementById(id)?.addEventListener('click', openAboutModal);
-});
-document.getElementById('aboutClose')?.addEventListener('click', closeAboutModal);
-aboutBackdrop?.addEventListener('click', (e)=>{ if(e.target === aboutBackdrop) closeAboutModal(); });
-
-/* ============================================================
    FAVORİLERİM MODALI
    ============================================================ */
 const favsModal = document.getElementById('favsModal');
@@ -192,7 +217,7 @@ function renderFavsList(){
         </div>
         <div class="fav-item-actions">
           <button class="btn" onclick="goToFav('${type}', ${item.id})">${iconSvg('navigation',13)} Göster</button>
-          <button class="pop-btn fav active" onclick="toggleFav(${item.id}, '${type}')">${iconSvg('trash',13)}</button>
+          <button class="pop-btn fav active" onclick="window.appToggleFav(${item.id}, '${type}')">${iconSvg('trash',13)}</button>
         </div>
       </div>
     `;
@@ -215,12 +240,6 @@ function goToFav(type, id){
     setTimeout(()=> openCity(item, 'il'), 600);
   }
 }
-
-document.getElementById('btnShowFavs')?.addEventListener('click', ()=>{
-  renderFavsList();
-  favsModal?.classList.add('show');
-});
-document.getElementById('favsClose')?.addEventListener('click', ()=> favsModal?.classList.remove('show'));
 
 /* ============================================================
    PAYLAŞILABİLİR DAVET LİNKİ SİSTEMİ
@@ -285,7 +304,6 @@ function closeAdModal(){
 }
 document.getElementById('adModalClose')?.addEventListener('click', closeAdModal);
 document.getElementById('adSkipBtn')?.addEventListener('click', closeAdModal);
-adModalBackdrop?.addEventListener('click', (e)=>{ if(e.target === adModalBackdrop) closeAdModal(); });
 
 setTimeout(()=>{ showAdModal(); }, 25000);
 
@@ -409,7 +427,7 @@ function calculateQuizResult(){
             <button class="btn active" id="btnQuizGoMap">${iconSvg('navigation',14)} Haritada Göster</button>
             <button class="social-btn insta" id="btnQuizShare">${iconSvg('globe',14)} Hikayede Paylaş</button>
           </div>
-          <button class="btn" id="btnQuizInvite" onclick="copyInviteLink('${bestCity.ad}')">${iconSvg('link',14)} Arkadaşlarını Davet Et</button>
+          <button class="btn" id="btnQuizInvite" onclick="window.appCopyLink('${bestCity.ad}')">${iconSvg('link',14)} Arkadaşlarını Davet Et</button>
         </div>
       </div>
     `;
@@ -438,9 +456,6 @@ function calculateQuizResult(){
   }
 }
 
-document.getElementById('btnStartQuiz')?.addEventListener('click', startQuiz);
-document.getElementById('quizClose')?.addEventListener('click', ()=> quizModal?.classList.remove('show'));
-
 /* ============================================================
    2. 🎲 "BENİ ŞAŞIRT!" (%100 GARANTİ POPUP & PULSE VURGUSU)
    ============================================================ */
@@ -456,7 +471,6 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   }
 
-  // Marker'ın kesinlikle harita katmanında bulunmasını sağla
   if(isIlce){
     renderIlcelerLazy();
     if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
@@ -578,7 +592,6 @@ function openShareModal(city, score){
   ctx.fillText('Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 920);
 }
 
-document.getElementById('shareClose')?.addEventListener('click', ()=> shareModal?.classList.remove('show'));
 document.getElementById('btnDownloadStory')?.addEventListener('click', ()=>{
   if(!shareCanvas) return;
   const link = document.createElement('a');
@@ -674,11 +687,6 @@ function renderCompareTable(){
   `;
 }
 
-document.getElementById('btnCompare')?.addEventListener('click', ()=>{
-  populateCompareSelects();
-  compareModal?.classList.add('show');
-});
-document.getElementById('compareClose')?.addEventListener('click', ()=> compareModal?.classList.remove('show'));
 compSelect1?.addEventListener('change', renderCompareTable);
 compSelect2?.addEventListener('change', renderCompareTable);
 
@@ -954,9 +962,22 @@ function wireFilters(){
 }
 
 /* ============================================================
-   HASSAS SÜREKLİ SKORLAMA & %70 EŞİK FİLTRESİ
+   SERT FİLTRE ELEME MANTIĞI (HARD CONSTRAINTS) & SÜREKLİ SKORLAMA
    ============================================================ */
 function evalCity(c){
+  // HARD CONSTRAINT #1: Deniz Kenarı Kesin Şartı
+  if (state['deniz'] === 1 && c.deniz !== 1) {
+    return { score: 0, passed: 0, activeFilters: 1, eligible: false, reasons: ['Deniz kenarı değil'] };
+  }
+  if (state['deniz'] === 2 && c.deniz === 1) {
+    return { score: 0, passed: 0, activeFilters: 1, eligible: false, reasons: ['Deniz kenarı'] };
+  }
+
+  // HARD CONSTRAINT #2: Bölge Kesin Şartı
+  if (state['bolge'] && state['bolge'].size < 7 && !state['bolge'].has(c.bolge)) {
+    return { score: 0, passed: 0, activeFilters: 1, eligible: false, reasons: ['Bölge dışı'] };
+  }
+
   let activeFilters = 0;
   let totalRatio = 0;
   const reasons = [];
@@ -976,12 +997,13 @@ function evalCity(c){
       } else {
         const span = Math.max(1, f.max - f.min);
         const diff = v < st.min ? (st.min - v) : (v - st.max);
-        const penalty = Math.min(1, diff / (span * 0.25));
+        const penalty = Math.min(1, diff / (span * 0.20));
         const ratio = Math.max(0, 1 - penalty);
         totalRatio += ratio;
         if(ratio < 0.7) reasons.push(f.label);
       }
     } else if(f.type==='tri'){
+      if(f.key==='deniz') return; // Yukarıda hard constraint olarak bakıldı
       if(state[f.key]===0) return;
       activeFilters++;
       const want = state[f.key]===1?1:0;
@@ -992,6 +1014,7 @@ function evalCity(c){
         reasons.push(f.label);
       }
     } else if(f.type==='checks'){
+      if(f.key==='bolge') return; // Yukarıda hard constraint olarak bakıldı
       const st=state[f.key];
       if(st.size===f.opts.length) return;
       activeFilters++;
@@ -1142,7 +1165,7 @@ document.getElementById('layerToggle').addEventListener('click', function(e){
 });
 
 /* ============================================================
-   POPUP
+   POPUP (WINDOW CONTEXT HELPERS INTEGRATED)
    ============================================================ */
 function popupHtml(c, res, type){
   const col=colorFor(res.score,res.eligible);
@@ -1172,9 +1195,9 @@ function popupHtml(c, res, type){
     <h3>
       <span class="pop-title-left">${iconSvg(type==='ilce'?'map-pin':'building',15)} ${baslik}</span>
       <div class="pop-actions-top">
-        <button class="pop-btn fav ${isFav?'active':''}" onclick="toggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('shield',13)}</button>
-        <button class="pop-btn share" onclick="copyInviteLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
-        <button class="pop-btn share" onclick="openShareModal(RAW.${type==='il'?'iller':'ilceler'}.find(x=>x.id===${c.id}), ${res.score})" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
+        <button class="pop-btn fav ${isFav?'active':''}" onclick="window.appToggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('shield',13)}</button>
+        <button class="pop-btn share" onclick="window.appCopyLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
+        <button class="pop-btn share" onclick="window.appShareCity(${c.id}, '${type}')" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
       </div>
     </h3>
     <div class="region">${altBaslik}</div>
@@ -1190,7 +1213,6 @@ function openCity(c, type){
   const mk = type==='il' ? markersIl[c.id] : markersIlce[c.id];
   if(!mk) return;
 
-  // Katmanda olmasını garanti et
   if(type==='ilce'){
     renderIlcelerLazy();
     if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
@@ -1283,7 +1305,6 @@ function filterSearch(){
     return;
   }
 
-  // Önce arama kelimesiyle BAŞLAYANLAR, sonra İÇİNDE GEÇENLER
   const filterAndSort = (list) => {
     const starts = [];
     const includes = [];

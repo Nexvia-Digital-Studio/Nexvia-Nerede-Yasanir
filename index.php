@@ -25,7 +25,7 @@ require __DIR__ . '/lib/icons.php';
       <div class="brand">
         <h1><?= icon('map-pin', 20) ?> Yaşam Haritası</h1>
         <div class="brand-right">
-          <button class="icon-btn" id="btnAbout" title="Nexvia Digital Studio & Batuhan Akcan Hakkında">
+          <button class="icon-btn" id="btnAbout" onclick="window.appOpenAbout()" title="Nexvia Digital Studio & Batuhan Akcan Hakkında">
             <?= icon('users', 16) ?>
           </button>
           <button class="icon-btn" id="btnThemeToggle" title="Temayı Değiştir (Açık/Karanlık)">
@@ -44,11 +44,11 @@ require __DIR__ . '/lib/icons.php';
         <div id="searchResults" class="search-results"></div>
       </div>
 
-      <!-- İnteraktif Aksiyon Butonları (SVG İkonlu) -->
+      <!-- İnteraktif Aksiyon Butonları (Çift Güvenlikli Window Handlers) -->
       <div class="interactive-bar">
-        <button class="action-btn quiz-btn" id="btnStartQuiz"><?= icon('compass', 14) ?> Ruh Şehrini Bul</button>
-        <button class="action-btn surprise-btn" id="btnSurprise"><?= icon('rotate', 14) ?> Beni Şaşırt!</button>
-        <button class="action-btn fav-btn" id="btnShowFavs"><?= icon('shield', 14) ?> Favoriler (<span id="favCount">0</span>)</button>
+        <button class="action-btn quiz-btn" id="btnStartQuiz" onclick="window.appOpenQuiz()"><?= icon('compass', 14) ?> Ruh Şehrini Bul</button>
+        <button class="action-btn surprise-btn" id="btnSurprise" onclick="window.appOpenSurprise()"><?= icon('rotate', 14) ?> Beni Şaşırt!</button>
+        <button class="action-btn fav-btn" id="btnShowFavs" onclick="window.appOpenFavs()"><?= icon('shield', 14) ?> Favoriler (<span id="favCount">0</span>)</button>
       </div>
 
       <!-- Hazır Yaşam Tarzı Filtreleri -->
@@ -74,7 +74,7 @@ require __DIR__ . '/lib/icons.php';
     <div class="sb-actions">
       <button class="btn" id="btnReset"><?= icon('rotate', 15) ?> Sıfırla</button>
       <button class="btn active" id="btnStrict"><?= icon('check', 15) ?> Sadece uygun</button>
-      <button class="btn" id="btnCompare"><?= icon('activity', 15) ?> Karşılaştır</button>
+      <button class="btn" id="btnCompare" onclick="window.appOpenCompare()"><?= icon('activity', 15) ?> Karşılaştır</button>
     </div>
     
     <div class="filters" id="filters">
@@ -148,13 +148,13 @@ require __DIR__ . '/lib/icons.php';
 </div>
 
 <!-- ============================================================
-   MODALLAR
-   ============================================================ */ -->
+   MODALLAR (z-index: 999999)
+   ============================================================ -->
 
 <!-- FAVORİLERİM MODALI -->
 <div class="about-backdrop" id="favsModal">
   <div class="about-card favs-card">
-    <button class="about-close" id="favsClose">&times;</button>
+    <button class="about-close" id="favsClose" onclick="document.getElementById('favsModal').classList.remove('show')">&times;</button>
     <h2><?= icon('shield', 18) ?> Kaydedilen Favori Yerleriniz</h2>
     <p class="sub">Beğendiğiniz il ve ilçeler listesi.</p>
     <div id="favsListContainer" class="favs-list-wrap">
@@ -166,7 +166,7 @@ require __DIR__ . '/lib/icons.php';
 <!-- 🔮 RUH ŞEHRİNİ BUL QUIZ MODALI -->
 <div class="about-backdrop" id="quizModal">
   <div class="about-card quiz-card">
-    <button class="about-close" id="quizClose">&times;</button>
+    <button class="about-close" id="quizClose" onclick="document.getElementById('quizModal').classList.remove('show')">&times;</button>
     <div class="quiz-step" id="quizStepContainer"></div>
   </div>
 </div>
@@ -174,7 +174,7 @@ require __DIR__ . '/lib/icons.php';
 <!-- ⚖️ ŞEHİR KARŞILAŞTIRMA MODALI -->
 <div class="about-backdrop" id="compareModal">
   <div class="about-card compare-card">
-    <button class="about-close" id="compareClose">&times;</button>
+    <button class="about-close" id="compareClose" onclick="document.getElementById('compareModal').classList.remove('show')">&times;</button>
     <h2><?= icon('activity', 18) ?> Şehir Karşılaştırma</h2>
     <p class="sub">İki şehir veya ilçe seçerek değerlerini yan yana kıyaslayın.</p>
     <div class="compare-selectors">
@@ -191,7 +191,7 @@ require __DIR__ . '/lib/icons.php';
 <!-- 📸 INSTAGRAM STORY GÖRSEL PAYLAŞIM MODALI -->
 <div class="about-backdrop" id="shareModal">
   <div class="about-card share-card">
-    <button class="about-close" id="shareClose">&times;</button>
+    <button class="about-close" id="shareClose" onclick="document.getElementById('shareModal').classList.remove('show')">&times;</button>
     <h2><?= icon('globe', 18) ?> Hikayede Paylaş</h2>
     <p class="sub">Ruh şehrini veya uyum skorunu Instagram Story formatında indir ve paylaş!</p>
     <div class="canvas-preview-wrap">
@@ -206,7 +206,7 @@ require __DIR__ . '/lib/icons.php';
 <!-- 👨‍💻 NEXVİA DİGİTAL STUDİO & BATUHAN AKCAN MODALI -->
 <div class="about-backdrop" id="aboutBackdrop">
   <div class="about-card">
-    <button class="about-close" id="aboutClose">&times;</button>
+    <button class="about-close" id="aboutClose" onclick="document.getElementById('aboutBackdrop').classList.remove('show')">&times;</button>
     <div class="about-avatar">
       <?= icon('zap', 24) ?>
     </div>
