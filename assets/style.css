@@ -66,12 +66,12 @@ body.light-theme .sb-head {
 .sb-head h1 .ic{color:#bfdbfe;}
 .sb-head p{font-size:12px; color:#cbd5e1; margin-top:3px;}
 
-.dev-tag {
-  display:inline-block; font-size:10px; background:rgba(255,255,255,0.2);
-  padding:1px 6px; border-radius:6px; cursor:pointer; font-weight:700; color:#fff;
-  transition:.2s; margin-left:4px;
+.nexvia-tag {
+  display:inline-block; font-size:11px; background:rgba(255,255,255,0.22);
+  padding:2px 8px; border-radius:6px; font-weight:700; color:#fff; text-decoration:none;
+  transition:.2s; margin-left:2px; border:1px solid rgba(255,255,255,0.3);
 }
-.dev-tag:hover{background:rgba(255,255,255,0.35); transform:scale(1.05);}
+.nexvia-tag:hover{background:#fff; color:#1d4ed8; transform:scale(1.05);}
 
 /* Tema ve Hakkında butonu */
 .icon-btn{
@@ -263,7 +263,7 @@ body.light-theme .ic-moon{display:none;}
 .map-top-ad .ad-label{font-size:8px; color:var(--muted);}
 
 .sb-footer {
-  padding:8px 12px; font-size:11px; text-align:center; color:var(--muted);
+  padding:10px 12px; font-size:11px; text-align:center; color:var(--muted);
   border-top:1px solid var(--border); background:var(--panel); flex-shrink:0;
 }
 
@@ -319,6 +319,19 @@ body.light-theme .ic-moon{display:none;}
   box-shadow:0 8px 24px var(--shadow); background:#000; display:flex; justify-content:center;
 }
 #shareCanvas { width:100%; max-width:270px; height:auto; display:block; }
+
+.social-btn.web {
+  background:linear-gradient(135deg, #0284c7, #2563eb);
+  box-shadow:0 4px 14px rgba(37,99,235,0.35);
+}
+.social-btn.web:hover { transform:translateY(-2px); box-shadow:0 6px 18px rgba(37,99,235,0.5); }
+
+.social-btn.github {
+  background:linear-gradient(135deg, #334155, #0f172a);
+  border:1px solid var(--border);
+  box-shadow:0 4px 14px rgba(0,0,0,0.35);
+}
+.social-btn.github:hover { transform:translateY(-2px); background:#1e293b; }
 
 /* MAP */
 #map{flex:1; height:100%; background:var(--bg); z-index:1;}

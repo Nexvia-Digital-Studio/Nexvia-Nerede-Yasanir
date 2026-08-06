@@ -6,7 +6,7 @@ require __DIR__ . '/lib/icons.php';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Yaşam Haritası — Türkiye'de Nerede Yaşarım?</title>
+<title>Yaşam Haritası — Türkiye'de Nerede Yaşarım? | Nexvia Digital Studio</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Canvas Konfeti efekti -->
@@ -25,7 +25,7 @@ require __DIR__ . '/lib/icons.php';
       <div class="brand">
         <h1><?= icon('map-pin', 20) ?> Yaşam Haritası</h1>
         <div class="brand-right">
-          <button class="icon-btn" id="btnAbout" title="Geliştirici & Hakkında (Batuhan Akcan)">
+          <button class="icon-btn" id="btnAbout" title="Nexvia Digital Studio & Batuhan Akcan Hakkında">
             <?= icon('users', 16) ?>
           </button>
           <button class="icon-btn" id="btnThemeToggle" title="Temayı Değiştir (Açık/Karanlık)">
@@ -34,7 +34,7 @@ require __DIR__ . '/lib/icons.php';
           </button>
         </div>
       </div>
-      <p>Türkiye'de nerede yaşamalısın? Filtrele & keşfet. <span class="dev-tag" id="triggerAbout">⚡ Gönüllü Proje</span></p>
+      <p>Türkiye'de nerede yaşamalısın? <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="nexvia-tag">⚡ Nexvia Digital Studio</a></p>
       
       <!-- Hızlı Arama -->
       <div class="search-box">
@@ -99,7 +99,7 @@ require __DIR__ . '/lib/icons.php';
     </div>
 
     <div class="sb-footer">
-      <span id="footerAbout">© Yaşam Haritası · <b style="cursor:pointer;color:var(--accent2);">Batuhan Akcan</b></span>
+      <span>Geliştirici: <b>Batuhan Akcan</b> · 🚀 <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" style="color:var(--accent2);font-weight:700;text-decoration:none;">Nexvia Digital Studio</a></span>
     </div>
   </aside>
 
@@ -149,9 +149,7 @@ require __DIR__ . '/lib/icons.php';
 <div class="about-backdrop" id="quizModal">
   <div class="about-card quiz-card">
     <button class="about-close" id="quizClose">&times;</button>
-    <div class="quiz-step" id="quizStepContainer">
-      <!-- Dinamik Quiz Soruları js ile doldurulacak -->
-    </div>
+    <div class="quiz-step" id="quizStepContainer"></div>
   </div>
 </div>
 
@@ -187,25 +185,30 @@ require __DIR__ . '/lib/icons.php';
   </div>
 </div>
 
-<!-- 👨‍💻 BATUHAN AKCAN HAKKINDA MODALI -->
+<!-- 👨‍💻 NEXVİA DİGİTAL STUDİO & BATUHAN AKCAN MODALI -->
 <div class="about-backdrop" id="aboutBackdrop">
   <div class="about-card">
     <button class="about-close" id="aboutClose">&times;</button>
     <div class="about-avatar">
-      <span>👨‍💻</span>
+      <span>🚀</span>
     </div>
-    <h2>Batuhan Akcan</h2>
-    <div class="about-badge">⚡ Gönüllü & Ücretsiz Proje</div>
+    <h2>Nexvia Digital Studio</h2>
+    <div class="about-badge">⚡ Batuhan Akcan & Gönüllü Proje</div>
     <p class="about-text">
-      Merhaba! Ben <b>Batuhan Akcan</b>. Yaşam Haritası projesini tamamen <b>gönüllü ve ücretsiz</b> olarak geliştirdim. Amacım, Türkiye'de yaşamak için iklimi, deniz mesafesi, rakımı, canlı nem/hava kalitesi ve altyapısı kendi yaşam tarzına en çok uyan şehir ve ilçeleri herkesin kolayca keşfedebilmesidir.
+      Merhaba! Ben <b>Batuhan Akcan</b>. Yaşam Haritası projesini <b>Nexvia Digital Studio</b> bünyesinde tamamen <b>gönüllü ve açık kaynaklı</b> olarak geliştirdim. Amacımız, Türkiye'de yaşamak için iklimi, deniz mesafesi, rakımı, canlı nem/hava kalitesi ve altyapısı kendi yaşam tarzına en çok uyan şehir ve ilçeleri herkesin kolayca keşfedebilmesidir.
     </p>
     <div class="social-links">
+      <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="social-btn web">
+        🌐 Web Sitemiz: nexviastudio.com
+      </a>
+      <a href="https://github.com/Nexvia-Digital-Studio" target="_blank" rel="noopener" class="social-btn github">
+        💻 GitHub: Nexvia Digital Studio
+      </a>
       <a href="https://instagram.com/batuhann_akcan" target="_blank" rel="noopener" class="social-btn insta">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-        Instagram: @batuhann_akcan
+        📸 Instagram: @batuhann_akcan
       </a>
     </div>
-    <div class="about-footer-text">Destek olmak ve görüşlerinizi iletmek için Instagram üzerinden ulaşabilirsiniz.</div>
+    <div class="about-footer-text">Projelerimiz ve iş birlikleri için nexviastudio.com üzerinden ulaşabilirsiniz.</div>
   </div>
 </div>
 

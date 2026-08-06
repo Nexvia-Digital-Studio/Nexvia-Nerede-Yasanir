@@ -7,7 +7,7 @@
 // SVG ikonlar
 const SVG = {
   'map-pin':'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
-  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z"/>',
+  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4 10z"/>',
   'waves':'<path d="M2 6c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
   'mountain':'<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
   'ruler':'<path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0L2.7 16.7a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/>',
@@ -143,7 +143,7 @@ document.getElementById('btnToggleNames').addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   BEN KİMİM & GÖNÜLLÜ PROJE MODALI (BATUHAN AKCAN)
+   BEN KİMİM & GÖNÜLLÜ PROJE MODALI (NEXVIA DIGITAL STUDIO & BATUHAN AKCAN)
    ============================================================ */
 const aboutBackdrop = document.getElementById('aboutBackdrop');
 function openAboutModal(){ if(aboutBackdrop) aboutBackdrop.classList.add('show'); }
@@ -255,7 +255,6 @@ function renderQuizStep(){
 }
 
 function calculateQuizResult(){
-  // Sıfırla ve quiz yanıtlarını uygula
   FILTERS.forEach(g=>g.items.forEach(f=>{
     if(f.type==='range') setRangeVal(f.key, f.min, f.max);
     else if(f.type==='tri') setTriVal(f.key, 0);
@@ -268,7 +267,6 @@ function calculateQuizResult(){
 
   update();
 
-  // En yüksek skorlu şehri bul
   let bestCity = null;
   let bestScore = -1;
   
@@ -299,7 +297,6 @@ function calculateQuizResult(){
       </div>
     `;
 
-    // Konfeti efekti!
     if(typeof confetti === 'function'){
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
@@ -336,7 +333,6 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
 
   const target = validList[Math.floor(Math.random() * validList.length)];
   const isIlce = !!target.il_id;
-  const res = evalCity(target);
 
   if(typeof confetti === 'function'){
     confetti({ particleCount: 60, spread: 60, origin: { y: 0.7 } });
@@ -418,7 +414,7 @@ function openShareModal(city, score){
 
   // Özellik Detay Kutusu
   ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-  ctx.roundRect ? ctx.roundRect(40, 540, w - 80, 240, 16) : ctx.fillRect(40, 540, w - 80, 240);
+  if (ctx.roundRect) ctx.roundRect(40, 540, w - 80, 240, 16); else ctx.fillRect(40, 540, w - 80, 240);
   ctx.fill();
 
   ctx.fillStyle = '#f8fafc';
@@ -437,14 +433,14 @@ function openShareModal(city, score){
     ctx.fillText(s, 60, 580 + (idx * 40));
   });
 
-  // Footer Alt Yazı
+  // Footer Alt Yazı (Nexvia Studio)
   ctx.fillStyle = '#94a3b8';
   ctx.font = '13px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Sen de kendi ruh şehrini keşfet: yasamharitasi.com', w/2, 890);
+  ctx.fillText('Sen de kendi ruh şehrini keşfet: nexviastudio.com', w/2, 890);
   ctx.fillStyle = '#64748b';
   ctx.font = '11px sans-serif';
-  ctx.fillText('Geliştirici: Batuhan Akcan (@batuhann_akcan)', w/2, 920);
+  ctx.fillText('🚀 Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 920);
 }
 
 document.getElementById('shareClose')?.addEventListener('click', ()=> shareModal?.classList.remove('show'));

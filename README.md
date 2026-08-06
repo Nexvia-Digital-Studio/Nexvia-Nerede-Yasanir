@@ -2,20 +2,26 @@
 
 > **Türkiye'de Yaşayabileceğin En İdeal İl ve İlçeyi Keşfet!**
 > 
-> Canlı iklim verileri, deniz mesafesi, rakım, hava kalitesi (AQI), canlı nem oranı, deprem riski ve altyapı skoru ile Türkiye'deki 81 il ve 950+ ilçeyi filtreleyin ve size en uyumlu yaşam alanını harita üzerinde görün.
+> Geliştirici & Stüdyo: **[Nexvia Digital Studio](https://www.nexviastudio.com/)** · Batuhan Akcan ([@batuhann_akcan](https://instagram.com/batuhann_akcan))
+
+Canlı iklim verileri, deniz mesafesi, rakım, hava kalitesi (AQI), canlı nem oranı, deprem riski ve altyapı skoru ile Türkiye'deki 81 il ve 950+ ilçeyi filtreleyin ve size en uyumlu yaşam alanını harita üzerinde görün.
 
 ---
 
 ## 🌟 Öne Çıkan Özellikler
 
+- 🔮 **"Ruh Şehrini Bul" Quiz Modu**: 3 eğlenceli soru ile ideal yaşam alanınızı bulun.
+- 🎲 **"Beni Şaşırt!"**: Filtrelerinize uyan şehirler arasından rastgele bir yer seçer ve konfetilerle uçuş (flyTo) yapar.
+- 📸 **Instagram Story Kartı Üreticisi**: Seçilen şehir ve uyum skorunuzu 1 tıkla şık bir Instagram Story görseli (`.png`) olarak indirin.
+- ⚖️ **Side-by-Side Şehir Karşılaştırma**: İki şehir veya ilçeyi yan yana getiren kıyaslama tablosu.
+- ❤️ **Favorilerim (Wishlist)**: Beğendiğiniz yerleri kaydedip dilediğiniz zaman inceleyin.
 - 📍 **81 İl ve 950+ İlçe Desteği**: Türkiye'nin tüm illeri ve ilçeleri koordinatlarıyla entegre.
 - 🎯 **Hassas Sürekli Uyum Skorlaması**: Slider hareket ettikçe skorlar (%100, %92, %85, %76...) kademeli ve duyarlı biçimde değişir.
 - 🛑 **%70 Uyum Eşik Filtresi**: Kriterlerinize %70'ten daha az uyan konumlar haritadan otomatik elenir/silinir.
 - 🌤️ **Canlı Hava Durumu & AQI Integration**: Open-Meteo API ile anlık nem, sıcaklık ve hava kirliliği (AQI) verisi.
-- 🔍 **Canlı Şehir & İlçe Arama**: Açılır arama menüsü ile istenen il veya ilçeye anında uçuş (flyTo).
 - 🌓 **Açık & Karanlık Tema (Light/Dark Mode)**: Göz yormayan CartoDB basemap temaları.
 - 📱 **Mobil & Performans Odaklı**: Viewport bounds filtresi ve zoom eşikleri (Zoom 9.5+) sayesinde kasma ve donma yaşanmaz.
-- 💰 **Google AdSense Hazır Entegrasyonu**: Sayfa içi, sidebar, harita üstü banner ve kapatılabilir pop-up (interstitial) reklam alanları hazır.
+- 💰 **Google AdSense Entegrasyonu**: Banner ve kapatılabilir pop-up (interstitial) reklam alanları hazır.
 
 ---
 
@@ -25,8 +31,8 @@ Projeyi yerel sunucunuzda (XAMPP, WAMP, Laragon veya Apache/Nginx) çalıştırm
 
 1. **Depoyu Klonlayın**:
    ```bash
-   git clone https://github.com/Nexvia-Digital-Studio/Nexvia-Nerede-Ya-an-r.git
-   cd Nexvia-Nerede-Ya-an-r
+   git clone https://github.com/Nexvia-Digital-Studio/Nexvia-Nerede-Yasanir.git
+   cd Nexvia-Nerede-Yasanir
    ```
 
 2. **Veritabanını İçe Aktarın**:
@@ -51,10 +57,10 @@ Bu proje **GNU Affero General Public License v3.0 (AGPL-3.0)** altında açık k
 
 ---
 
-## 👨‍💻 Geliştirici & İletişim
+## 🌐 Nexvia Digital Studio & İletişim
 
-**Batuhan Akcan / Nexvia Digital Studio**
-- 📸 Instagram: [@batuhann_akcan](https://instagram.com/batuhann_akcan)
-- 🌐 GitHub: [Nexvia Digital Studio](https://github.com/Nexvia-Digital-Studio)
+- 🌐 **Web Sitemiz**: [https://www.nexviastudio.com/](https://www.nexviastudio.com/)
+- 💻 **GitHub**: [Nexvia Digital Studio GitHub](https://github.com/Nexvia-Digital-Studio)
+- 📸 **Geliştirici Instagram**: [@batuhann_akcan](https://instagram.com/batuhann_akcan)
 
 *Gönüllü ve ücretsiz bir açık kaynak projesidir.*
