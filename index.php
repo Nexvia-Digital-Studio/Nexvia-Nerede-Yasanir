@@ -44,11 +44,11 @@ require __DIR__ . '/lib/icons.php';
         <div id="searchResults" class="search-results"></div>
       </div>
 
-      <!-- İnteraktif Aksiyon Butonları (Çift Güvenlikli Window Handlers) -->
+      <!-- İnteraktif Aksiyon Butonları (Kalp İkonlu) -->
       <div class="interactive-bar">
         <button class="action-btn quiz-btn" id="btnStartQuiz" onclick="window.appOpenQuiz()"><?= icon('compass', 14) ?> Ruh Şehrini Bul</button>
         <button class="action-btn surprise-btn" id="btnSurprise" onclick="window.appOpenSurprise()"><?= icon('rotate', 14) ?> Beni Şaşırt!</button>
-        <button class="action-btn fav-btn" id="btnShowFavs" onclick="window.appOpenFavs()"><?= icon('shield', 14) ?> Favoriler (<span id="favCount">0</span>)</button>
+        <button class="action-btn fav-btn" id="btnShowFavs" onclick="window.appToggleFavMode()"><?= icon('heart', 14) ?> Favoriler (<span id="favCount">0</span>)</button>
       </div>
 
       <!-- Hazır Yaşam Tarzı Filtreleri -->
@@ -58,7 +58,7 @@ require __DIR__ . '/lib/icons.php';
           <button class="chip-btn" data-preset="sea_summer"><?= icon('waves', 13) ?> Kıyı & Yaz</button>
           <button class="chip-btn" data-preset="nature_cool"><?= icon('mountain', 13) ?> Dağ & Doğa</button>
           <button class="chip-btn" data-preset="metropolis"><?= icon('building', 13) ?> Metropol</button>
-          <button class="chip-btn" data-preset="peace_safety"><?= icon('shield', 13) ?> Huzurlu</button>
+          <button class="chip-btn" data-preset="peace_safety"><?= icon('heart', 13) ?> Huzurlu</button>
         </div>
       </div>
 
@@ -144,18 +144,19 @@ require __DIR__ . '/lib/icons.php';
     <div class="row"><div class="dot" style="background:#84cc16"></div>İyi (%75–85)</div>
     <div class="row"><div class="dot" style="background:#eab308"></div>Uygun (%70–75)</div>
     <div class="row"><div class="dot" style="background:#94a3b8"></div>Zayıf / elendi (<%70)</div>
+    <div class="row"><div class="dot" style="background:#ec4899"></div>Favorileriniz</div>
   </div>
 </div>
 
 <!-- ============================================================
-   MODALLAR (z-index: 999999)
+   MODALLAR
    ============================================================ -->
 
 <!-- FAVORİLERİM MODALI -->
 <div class="about-backdrop" id="favsModal">
   <div class="about-card favs-card">
     <button class="about-close" id="favsClose" onclick="document.getElementById('favsModal').classList.remove('show')">&times;</button>
-    <h2><?= icon('shield', 18) ?> Kaydedilen Favori Yerleriniz</h2>
+    <h2><?= icon('heart', 18) ?> Kaydedilen Favori Yerleriniz</h2>
     <p class="sub">Beğendiğiniz il ve ilçeler listesi.</p>
     <div id="favsListContainer" class="favs-list-wrap">
       <div style="text-align:center; color:var(--muted); padding:30px;">Henüz kaydedilmiş favori yer bulunmuyor.</div>

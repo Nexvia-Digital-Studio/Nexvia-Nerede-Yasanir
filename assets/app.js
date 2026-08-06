@@ -1,13 +1,13 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Hard Constraint Sert Filtreleme, Window Action Handlers, Quiz, Beni Şaşırt, Canvas, Compare)
+   (Şehir Fotoğraflı Canvas Story, URL Slug, Kalp Favorilerim Harita Modu)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
 // SVG ikonlar
 const SVG = {
   'map-pin':'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
-  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4 10z"/>',
+  'globe':'<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
   'waves':'<path d="M2 6c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
   'mountain':'<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>',
   'ruler':'<path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0L2.7 16.7a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/>',
@@ -34,12 +34,22 @@ const SVG = {
   'zap':'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   'download':'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
   'trash':'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
-  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
+  'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+  'heart':'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
 };
 
 function iconSvg(name, size=16, cls='ic'){
   const p = SVG[name] || SVG['map-pin'];
   return `<svg class="${cls}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+
+// Türkçe Slug Dönüştürücü
+function slugify(text) {
+  if (!text) return '';
+  const map = {'ç':'c','Ç':'c','ğ':'g','Ğ':'g','ı':'i','I':'i','İ':'i','ö':'o','Ö':'o','ş':'s','Ş':'s','ü':'u','Ü':'u'};
+  return text.replace(/[çÇğĞıIİöÖşŞüÜ]/g, m => map[m])
+             .toLowerCase()
+             .replace(/[^a-z0-9]/g, '');
 }
 
 /* ============================================================
@@ -89,6 +99,7 @@ let RAW = {iller:[], ilceler:[], meta:{}};
 let state = {};
 let strictMode = true;
 let layerMode = 'auto';     // 'auto' | 'il' | 'ilce'
+let favOnlyMode = false;    // Sadece favorileri haritada göster modu
 let labelMode = localStorage.getItem('yh_label') || 'full'; // 'full' | 'compact'
 let currentTheme = localStorage.getItem('yh_theme') || 'dark';
 
@@ -105,7 +116,7 @@ const markersIl = {};     // id → marker
 const markersIlce = {};   // id → marker
 
 /* ============================================================
-   WINDOW GLOBAL HELPER FUNCTIONS (HER YERDEN ÇAĞRILABİLİR)
+   WINDOW GLOBAL HELPER FUNCTIONS
    ============================================================ */
 window.appToggleFav = function(id, type){
   const key = `${type}_${id}`;
@@ -116,27 +127,23 @@ window.appToggleFav = function(id, type){
   renderFavsList();
 };
 
-window.appOpenQuiz = function(){
-  startQuiz();
+window.appToggleFavMode = function(){
+  favOnlyMode = !favOnlyMode;
+  const btn = document.getElementById('btnShowFavs');
+  if(btn){
+    btn.classList.toggle('active', favOnlyMode);
+  }
+  update();
+  if(favOnlyMode && favorites.size === 0){
+    alert('Henüz favoriye eklenmiş bir il veya ilçe yok. Kalp ikonuna basarak favorilerinizi ekleyebilirsiniz!');
+  }
 };
 
-window.appOpenSurprise = function(){
-  document.getElementById('btnSurprise')?.click();
-};
-
-window.appOpenFavs = function(){
-  renderFavsList();
-  document.getElementById('favsModal')?.classList.add('show');
-};
-
-window.appOpenCompare = function(){
-  populateCompareSelects();
-  document.getElementById('compareModal')?.classList.add('show');
-};
-
-window.appOpenAbout = function(){
-  document.getElementById('aboutBackdrop')?.classList.add('show');
-};
+window.appOpenQuiz = function(){ startQuiz(); };
+window.appOpenSurprise = function(){ document.getElementById('btnSurprise')?.click(); };
+window.appOpenFavs = function(){ renderFavsList(); document.getElementById('favsModal')?.classList.add('show'); };
+window.appOpenCompare = function(){ populateCompareSelects(); document.getElementById('compareModal')?.classList.add('show'); };
+window.appOpenAbout = function(){ document.getElementById('aboutBackdrop')?.classList.add('show'); };
 
 window.appShareCity = function(id, type){
   const item = type==='il' ? RAW.iller.find(i=>i.id==+id) : RAW.ilceler.find(d=>d.id==+id);
@@ -242,10 +249,11 @@ function goToFav(type, id){
 }
 
 /* ============================================================
-   PAYLAŞILABİLİR DAVET LİNKİ SİSTEMİ
+   TEMİZ SLUG DAVET LİNKİ SİSTEMİ (?invite=mugla)
    ============================================================ */
 function copyInviteLink(cityName){
-  const url = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(cityName)}`;
+  const slug = slugify(cityName);
+  const url = `${window.location.origin}${window.location.pathname}?invite=${slug}`;
   navigator.clipboard.writeText(url).then(()=>{
     alert(`✨ Davet bağlantısı kopyalandı:\n\n${url}\n\nArkadaşına göndererek onun da yaşam haritasını keşfetmesini sağlayabilirsin!`);
   }).catch(()=>{
@@ -255,11 +263,12 @@ function copyInviteLink(cityName){
 
 function checkInviteUrl(){
   const params = new URLSearchParams(window.location.search);
-  const inviteName = params.get('invite') || params.get('share');
-  if(!inviteName) return;
+  const inviteSlug = params.get('invite') || params.get('share');
+  if(!inviteSlug) return;
 
-  const q = inviteName.trim().toLowerCase();
-  const target = RAW.ilceler.find(d=>d.ad.toLowerCase()===q) || RAW.iller.find(c=>c.ad.toLowerCase()===q);
+  const q = inviteSlug.trim().toLowerCase();
+  const target = RAW.ilceler.find(d=> slugify(d.ad) === q || d.ad.toLowerCase() === q) || 
+                 RAW.iller.find(c=> slugify(c.ad) === q || c.ad.toLowerCase() === q);
 
   const banner = document.getElementById('inviteBanner');
   const txt = document.getElementById('inviteText');
@@ -499,10 +508,32 @@ document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
 });
 
 /* ============================================================
-   3. 📸 INSTAGRAM STORY GÖRSEL KARTI ÜRETİCİSİ (CANVAS)
+   3. 📸 HD ŞEHİR FOTOĞRAFLI INSTAGRAM STORY KARTI ÜRETİCİSİ
    ============================================================ */
 const shareModal = document.getElementById('shareModal');
 const shareCanvas = document.getElementById('shareCanvas');
+
+// Yüksek Kalite Unsplash Manzara/Şehir Fotoğraf Haritası
+const CITY_PHOTOS = {
+  'mugla': 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1080&q=80',
+  'izmir': 'https://images.unsplash.com/photo-1589139832322-a795764049fa?auto=format&fit=crop&w=1080&q=80',
+  'istanbul': 'https://images.unsplash.com/photo-1527838832700-5059252407fa?auto=format&fit=crop&w=1080&q=80',
+  'antalya': 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=1080&q=80',
+  'amasra': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1080&q=80',
+  'trabzon': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80',
+  'nevsehir': 'https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?auto=format&fit=crop&w=1080&q=80',
+  'default_sea': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1080&q=80',
+  'default_mountain': 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1080&q=80',
+  'default_city': 'https://images.unsplash.com/photo-1477959858617-67f30ac72604?auto=format&fit=crop&w=1080&q=80'
+};
+
+function getCityPhotoUrl(city){
+  const slug = slugify(city.ad);
+  if(CITY_PHOTOS[slug]) return CITY_PHOTOS[slug];
+  if(city.deniz) return CITY_PHOTOS['default_sea'];
+  if((city.rakim||0) > 600) return CITY_PHOTOS['default_mountain'];
+  return CITY_PHOTOS['default_city'];
+}
 
 function openShareModal(city, score){
   if(!shareModal || !shareCanvas) return;
@@ -512,84 +543,109 @@ function openShareModal(city, score){
   const w = shareCanvas.width;
   const h = shareCanvas.height;
 
-  // Arka plan gradyanı
-  const grad = ctx.createLinearGradient(0, 0, 0, h);
-  grad.addColorStop(0, '#0f172a');
-  grad.addColorStop(0.5, '#1e293b');
-  grad.addColorStop(1, '#0f172a');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
+  const photoUrl = getCityPhotoUrl(city);
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
 
-  // Üst Başlık / Logo
-  ctx.fillStyle = '#3b82f6';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Yaşam Haritası', w/2, 70);
+  const renderCanvasContent = () => {
+    // Fotoğraf Arka Planı
+    ctx.drawImage(img, 0, 0, w, h);
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '14px sans-serif';
-  ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 100);
+    // Koyu Gradyan Filtre Katmanı (Okunabilirlik için)
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(15, 23, 42, 0.75)');
+    grad.addColorStop(0.4, 'rgba(15, 23, 42, 0.55)');
+    grad.addColorStop(1, 'rgba(15, 23, 42, 0.92)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
 
-  // Rozet Çemberi
-  const isIlce = !!city.il_id;
-  const ilName = isIlce ? (RAW.iller.find(i=>i.id===city.il_id)?.ad || '') : '';
-  const name = isIlce ? `${city.ad}` : city.ad;
-  const subName = isIlce ? `${ilName} ili` : (city.bolge || 'Türkiye');
+    // Üst Başlık / Logo
+    ctx.fillStyle = '#60a5fa';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Yaşam Haritası', w/2, 70);
 
-  ctx.beginPath();
-  ctx.arc(w/2, 280, 110, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
-  ctx.fill();
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 4;
-  ctx.stroke();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('Benim Türkiye\'deki Ruh Şehrim', w/2, 100);
 
-  // Uyum Skoru
-  ctx.fillStyle = '#22c55e';
-  ctx.font = 'bold 54px sans-serif';
-  ctx.fillText(`%${score}`, w/2, 270);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.font = 'bold 16px sans-serif';
-  ctx.fillText('UYUM SKORU', w/2, 310);
+    // Rozet Çemberi
+    const isIlce = !!city.il_id;
+    const ilName = isIlce ? (RAW.iller.find(i=>i.id===city.il_id)?.ad || '') : '';
+    const name = isIlce ? `${city.ad}` : city.ad;
+    const subName = isIlce ? `${ilName} ili` : (city.bolge || 'Türkiye');
 
-  // Şehir Adı
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 36px sans-serif';
-  ctx.fillText(name, w/2, 460);
+    ctx.beginPath();
+    ctx.arc(w/2, 270, 105, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
+    ctx.fill();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 4;
+    ctx.stroke();
 
-  ctx.fillStyle = '#60a5fa';
-  ctx.font = '18px sans-serif';
-  ctx.fillText(subName, w/2, 495);
+    // Uyum Skoru
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 54px sans-serif';
+    ctx.fillText(`%${score}`, w/2, 260);
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('UYUM SKORU', w/2, 300);
 
-  // Özellik Detay Kutusu
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
-  if (ctx.roundRect) ctx.roundRect(40, 540, w - 80, 240, 16); else ctx.fillRect(40, 540, w - 80, 240);
-  ctx.fill();
+    // Şehir Adı
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 10;
+    ctx.fillText(name, w/2, 450);
 
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = '15px sans-serif';
-  ctx.textAlign = 'left';
+    ctx.fillStyle = '#93c5fd';
+    ctx.font = '18px sans-serif';
+    ctx.fillText(subName, w/2, 485);
 
-  const stats = [
-    `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
-    `Deniz Konumu: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
-    `Rakım: ${city.rakim || 0} m`,
-    `Canlı Hava (AQI): ${city.aqi || 25} AQI`,
-    `Canlı Nem Oranı: %${city.nem || 60}`
-  ];
+    ctx.shadowBlur = 0; // Sıfırla
 
-  stats.forEach((s, idx) => {
-    ctx.fillText(s, 60, 580 + (idx * 40));
-  });
+    // Özellik Detay Kutusu (Cam Efekti)
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+    if (ctx.roundRect) ctx.roundRect(40, 530, w - 80, 240, 16); else ctx.fillRect(40, 530, w - 80, 240);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
 
-  // Footer Alt Yazı (Nexvia Studio)
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '13px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Sen de kendi ruh şehrini keşfet: nexviastudio.com', w/2, 890);
-  ctx.fillStyle = '#64748b';
-  ctx.font = '11px sans-serif';
-  ctx.fillText('Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 920);
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '15px sans-serif';
+    ctx.textAlign = 'left';
+
+    const stats = [
+      `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
+      `Deniz Konumu: ${city.deniz ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
+      `Rakım / Yükseklik: ${city.rakim || 0} m`,
+      `Canlı Hava (AQI): ${city.aqi || 25} AQI`,
+      `Canlı Nem Oranı: %${city.nem || 60}`
+    ];
+
+    stats.forEach((s, idx) => {
+      ctx.fillText(s, 65, 570 + (idx * 40));
+    });
+
+    // Footer Alt Yazı (Nexvia Studio)
+    ctx.fillStyle = '#cbd5e1';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Sen de kendi ruh şehrini keşfet: nexviastudio.com', w/2, 885);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('Nexvia Digital Studio · Batuhan Akcan (@batuhann_akcan)', w/2, 915);
+  };
+
+  img.onload = renderCanvasContent;
+  img.onerror = () => {
+    // Fotoğraf yüklenemezse varsayılan düz gradyanla çiz
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, w, h);
+    renderCanvasContent();
+  };
+  img.src = photoUrl;
 }
 
 document.getElementById('btnDownloadStory')?.addEventListener('click', ()=>{
@@ -1003,7 +1059,7 @@ function evalCity(c){
         if(ratio < 0.7) reasons.push(f.label);
       }
     } else if(f.type==='tri'){
-      if(f.key==='deniz') return; // Yukarıda hard constraint olarak bakıldı
+      if(f.key==='deniz') return;
       if(state[f.key]===0) return;
       activeFilters++;
       const want = state[f.key]===1?1:0;
@@ -1014,7 +1070,7 @@ function evalCity(c){
         reasons.push(f.label);
       }
     } else if(f.type==='checks'){
-      if(f.key==='bolge') return; // Yukarıda hard constraint olarak bakıldı
+      if(f.key==='bolge') return;
       const st=state[f.key];
       if(st.size===f.opts.length) return;
       activeFilters++;
@@ -1032,7 +1088,8 @@ function evalCity(c){
   return {score, passed: Math.round(totalRatio), activeFilters, eligible, reasons};
 }
 
-function colorFor(score, eligible){
+function colorFor(score, eligible, isFav){
+  if (favOnlyMode && isFav) return '#ec4899';
   if(strictMode && !eligible) return '#64748b';
   if(score>=85) return '#16a34a';
   if(score>=75) return '#84cc16';
@@ -1047,22 +1104,28 @@ const layerIl = L.layerGroup().addTo(map);
 const layerIlce = L.layerGroup().addTo(map);
 
 function renderCityMarkerHtml(c, res){
-  const col = colorFor(res.score, res.eligible);
-  const op = (!strictMode || res.eligible) ? 1 : 0;
+  const isFav = favorites.has(`il_${c.id}`);
+  const col = colorFor(res.score, res.eligible, isFav);
+  const op = (!strictMode || res.eligible || (favOnlyMode && isFav)) ? 1 : 0;
+  const extraClass = (favOnlyMode && isFav) ? 'fav-marker-cool' : '';
+
   if (labelMode === 'full') {
-    return `<div class="city-marker-cool" style="border-left-color:${col}; opacity:${op}; display:${res.eligible || !strictMode ? 'inline-flex':'none'}">${c.ad} <span class="cool-score" style="color:${col}">%${res.score}</span></div>`;
+    return `<div class="city-marker-cool ${extraClass}" style="border-left-color:${col}; opacity:${op}; display:${(res.eligible || !strictMode || (favOnlyMode && isFav)) ? 'inline-flex':'none'}">${c.ad} <span class="cool-score" style="color:${col}">%${res.score}</span></div>`;
   }
   const size = Math.max(16, Math.min(34, Math.round(Math.log10((c.nufus||50000)/1000)*10)));
-  return `<div class="city-marker" style="width:${size}px;height:${size}px;font-size:${Math.max(8,size/2.5)}px;background:${col};opacity:${op};display:${res.eligible || !strictMode ? 'flex':'none'}">${c.ad[0]}</div>`;
+  return `<div class="city-marker ${extraClass}" style="width:${size}px;height:${size}px;font-size:${Math.max(8,size/2.5)}px;background:${col};opacity:${op};display:${(res.eligible || !strictMode || (favOnlyMode && isFav)) ? 'flex':'none'}">${c.ad[0]}</div>`;
 }
 
 function renderIlceMarkerHtml(d, res){
-  const col = colorFor(res.score, res.eligible);
-  const op = (!strictMode || res.eligible) ? 0.95 : 0;
+  const isFav = favorites.has(`ilce_${d.id}`);
+  const col = colorFor(res.score, res.eligible, isFav);
+  const op = (!strictMode || res.eligible || (favOnlyMode && isFav)) ? 0.95 : 0;
+  const extraClass = (favOnlyMode && isFav) ? 'fav-marker-cool' : '';
+
   if (labelMode === 'full') {
-    return `<div class="ilce-marker-cool" style="opacity:${op}; display:${res.eligible || !strictMode ? 'inline-flex':'none'}"><span class="cool-dot" style="background:${col}"></span>${d.ad}</div>`;
+    return `<div class="ilce-marker-cool ${extraClass}" style="opacity:${op}; display:${(res.eligible || !strictMode || (favOnlyMode && isFav)) ? 'inline-flex':'none'}"><span class="cool-dot" style="background:${col}"></span>${d.ad}</div>`;
   }
-  return `<div class="city-marker ilce" style="width:10px;height:10px;background:${col};opacity:${op};font-size:7px;display:${res.eligible || !strictMode ? 'flex':'none'}">${d.ad[0]}</div>`;
+  return `<div class="city-marker ilce ${extraClass}" style="width:10px;height:10px;background:${col};opacity:${op};font-size:7px;display:${(res.eligible || !strictMode || (favOnlyMode && isFav)) ? 'flex':'none'}">${d.ad[0]}</div>`;
 }
 
 function renderMap(){
@@ -1094,12 +1157,38 @@ function renderIlcelerLazy(){
 }
 
 /* ============================================================
-   VIEWPORT BOUNDS SÜZGEÇLİ VE ÇAKIŞMA GİDERİCİ KATMAN GÜNCELLEMESİ
+   VIEWPORT BOUNDS SÜZGEÇLİ VE FAVORİLER MODU KATMAN GÜNCELLEMESİ
    ============================================================ */
 function updateLayers(){
   const z = map.getZoom();
   const note = document.getElementById('layerNote');
   let showIl, showIlce;
+
+  if (favOnlyMode) {
+    if(!map.hasLayer(layerIl)) layerIl.addTo(map);
+    renderIlcelerLazy();
+    if(!map.hasLayer(layerIlce)) layerIlce.addTo(map);
+    note.textContent = 'sadece favorileriniz gösteriliyor';
+
+    RAW.iller.forEach(c => {
+      const mk = markersIl[c.id];
+      const isFav = favorites.has(`il_${c.id}`);
+      if(mk){
+        if(isFav) { if(!layerIl.hasLayer(mk)) layerIl.addLayer(mk); }
+        else { if(layerIl.hasLayer(mk)) layerIl.removeLayer(mk); }
+      }
+    });
+
+    RAW.ilceler.forEach(d => {
+      const mk = markersIlce[d.id];
+      const isFav = favorites.has(`ilce_${d.id}`);
+      if(mk){
+        if(isFav) { if(!layerIlce.hasLayer(mk)) layerIlce.addLayer(mk); }
+        else { if(layerIlce.hasLayer(mk)) layerIlce.removeLayer(mk); }
+      }
+    });
+    return;
+  }
 
   if(layerMode==='auto'){
     showIl = true;
@@ -1165,16 +1254,16 @@ document.getElementById('layerToggle').addEventListener('click', function(e){
 });
 
 /* ============================================================
-   POPUP (WINDOW CONTEXT HELPERS INTEGRATED)
+   POPUP
    ============================================================ */
 function popupHtml(c, res, type){
-  const col=colorFor(res.score,res.eligible);
+  const isFav = favorites.has(`${type}_${c.id}`);
+  const col=colorFor(res.score,res.eligible, isFav);
   const ilAdi = type==='ilce' ? (RAW.iller.find(i=>i.id===c.il_id)?.ad || '') : c.ad;
   const baslik = type==='ilce' ? `${c.ad}` : c.ad;
   const altBaslik = type==='ilce' ? `${ilAdi} ili` : c.bolge;
   const live = c.canli;
   const liveBadge = live ? `<span class="fresh-badge ${live.age_h>6?'stale':''}">${iconSvg('droplet',11)} ${live.nem}% • AQI ${live.aqi} · ${live.age_h}sa önce</span>` : '';
-  const isFav = favorites.has(`${type}_${c.id}`);
 
   const grid = [
     ['Nüfus', c.nufus? fmtNum(c.nufus,'bin') : '—', 'users'],
@@ -1195,7 +1284,7 @@ function popupHtml(c, res, type){
     <h3>
       <span class="pop-title-left">${iconSvg(type==='ilce'?'map-pin':'building',15)} ${baslik}</span>
       <div class="pop-actions-top">
-        <button class="pop-btn fav ${isFav?'active':''}" onclick="window.appToggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('shield',13)}</button>
+        <button class="pop-btn fav ${isFav?'active':''}" onclick="window.appToggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('heart',13)}</button>
         <button class="pop-btn share" onclick="window.appCopyLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
         <button class="pop-btn share" onclick="window.appShareCity(${c.id}, '${type}')" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
       </div>
@@ -1399,6 +1488,8 @@ searchClear.addEventListener('click', ()=>{
    ============================================================ */
 document.getElementById('btnReset').addEventListener('click',()=>{
   document.querySelectorAll('.chip-btn').forEach(x=>x.classList.remove('active'));
+  favOnlyMode = false;
+  document.getElementById('btnShowFavs')?.classList.remove('active');
   buildFilters(); update();
 });
 document.getElementById('btnStrict').addEventListener('click',function(){

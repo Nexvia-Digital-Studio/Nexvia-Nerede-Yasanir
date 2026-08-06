@@ -11,6 +11,8 @@
   --good:#22c55e;
   --warn:#eab308; 
   --bad:#ef4444; 
+  --fav:#ec4899;
+  --fav-dark:#be185d;
   --border:#334155;
   --shadow:rgba(0,0,0,0.4);
   --glass:rgba(15,23,42,0.92);
@@ -28,6 +30,8 @@ body.light-theme {
   --good:#16a34a;
   --warn:#d97706;
   --bad:#dc2626;
+  --fav:#ec4899;
+  --fav-dark:#be185d;
   --border:#cbd5e1;
   --shadow:rgba(0,0,0,0.08);
   --glass:rgba(255,255,255,0.94);
@@ -148,6 +152,7 @@ body.light-theme .ic-moon{display:none;}
   background:linear-gradient(135deg,#ec4899,#be185d); box-shadow:0 3px 10px rgba(236,72,153,0.3);
 }
 .fav-btn:hover { transform:scale(1.03); background:linear-gradient(135deg,#f43f5e,#e11d48); }
+.fav-btn.active { background:linear-gradient(135deg,#be185d,#9d174d); box-shadow:0 0 0 2px #fff; }
 
 /* Hazır Yaşam Tarzı Filtre Çipleri */
 .preset-chips { margin-top: 10px; }
@@ -445,7 +450,7 @@ body.light-theme .ic-moon{display:none;}
 .btn-map-option:hover{background:var(--accent); color:#fff; border-color:var(--accent);}
 
 /* ============================================================
-   DENGE MARKER TASARIMLARI (İller 14px / İlçeler 10px) & SURPRISE PULSE
+   MARKER TASARIMLARI & FAVORİLER TEK RENK (PEMBE/MAGENTA)
    ============================================================ */
 
 @keyframes pulseGlow {
@@ -459,7 +464,14 @@ body.light-theme .ic-moon{display:none;}
   border-color:#f59e0b !important; z-index:99999 !important;
 }
 
-/* 1. İL MARKER'I (14px — Şık, Dengeli, Estetik Glass Badge) */
+/* Pembe Favori Marker'ı */
+.fav-marker-cool {
+  background: linear-gradient(135deg, #ec4899, #be185d) !important;
+  border-left-color: #ffffff !important; color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(236,72,153,0.5) !important;
+}
+
+/* 1. İL MARKER'I (14px) */
 .city-marker-cool {
   display:inline-flex; align-items:center; gap:5px; padding:4px 10px 4px 8px;
   background:var(--glass); border:1px solid var(--border); border-left-width:4px;
@@ -475,7 +487,7 @@ body.light-theme .ic-moon{display:none;}
   font-size:11px; font-weight:800; opacity:0.9; padding-left:2px; align-self:center;
 }
 
-/* 2. İLÇE MARKER'I (10px — İlden Belirgin Küçük Alt Rozet) */
+/* 2. İLÇE MARKER'I (10px) */
 .ilce-marker-cool {
   display:inline-flex; align-items:center; gap:4px; padding:2px 6px;
   background:var(--glass); border:1px solid var(--border);
