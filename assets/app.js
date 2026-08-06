@@ -1,6 +1,6 @@
 /* ============================================================
    Yaşam Haritası — frontend mantığı
-   (Kusursuz Bottleneck Puanlama, Denize Uzaklık km Filtresi, Hard Constraints)
+   (81 İl İçin Sosyal İmkânlar, Eğlence, Emeklilik, Gastro, Ev Kirası (₺), Sağlık/Eğitim Modülü)
    Veri: api/cities.php (DB) + api/refresh.php (canlı nem/AQI)
    ============================================================ */
 
@@ -35,7 +35,12 @@ const SVG = {
   'download':'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
   'trash':'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   'link':'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
-  'heart':'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>'
+  'heart':'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
+  'music':'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  'home':'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  'utensils':'<path d="M18 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/>',
+  'smile':'<circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>',
+  'dollar-sign':'<line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'
 };
 
 function iconSvg(name, size=16, cls='ic'){
@@ -53,16 +58,27 @@ function slugify(text) {
 }
 
 /* ============================================================
-   FİLTRE TANIMLARI (DENİZE UZAKLIK KM FİLTRESİ DAHİL)
+   FİLTRE TANIMLARI (SOSYAL İMKANLAR, KİRA ₺ VE GASTRO DAHİL)
    ============================================================ */
 const FILTERS = [
   {grp:'Coğrafi', icon:'globe', open:true, items:[
     {key:'deniz', label:'Deniz kenarı', ic:'waves', type:'tri', opts:['farketmez','evet','hayır']},
     {key:'denizMesafe', label:'Denize uzaklık', ic:'waves', type:'range', min:0, max:400, step:10, unit:'km', lower:true, note:'Kıyıya olan kuş uçuşu mesafe'},
     {key:'rakim', label:'Rakım', ic:'mountain', type:'range', min:0, max:2000, step:50, unit:'m'},
-    {key:'daglik', label:'Dağlık/arazi', ic:'mountain', type:'range', min:0, max:10, step:1, unit:'/10', note:'Rakım + engebe tahmini (rakımdan türetilir)'},
+    {key:'daglik', label:'Dağlık/arazi', ic:'mountain', type:'range', min:0, max:10, step:1, unit:'/10'},
   ]},
-  {grp:'İklim', icon:'thermometer', open:true, items:[
+  {grp:'Sosyal & Yaşam', icon:'music', open:true, items:[
+    {key:'sosyalImkan', label:'Sosyal imkânlar (etkinlik, kültür)', ic:'music', type:'range', min:0, max:10, step:1, unit:'/10', note:'Konser, sinema, tiyatro ve sosyal etkinlik düzeyi'},
+    {key:'eglence', label:'Gece hayatı & eğlence', ic:'coffee', type:'range', min:0, max:10, step:1, unit:'/10', note:'Mekân, bar ve eğlence hayatı çeşitliliği'},
+    {key:'genclik', label:'Gençlik & öğrenci yaşamı', ic:'smile', type:'range', min:0, max:10, step:1, unit:'/10', note:'Üniversite ortamı ve gençlik sosyalliği'},
+    {key:'emeklilik', label:'Emeklilik & huzur', ic:'sun', type:'range', min:0, max:10, step:1, unit:'/10', note:'Sakinlik, temiz hava ve yürüyüş alanları'},
+    {key:'gastro', label:'Mutfak & yemek kültürü', ic:'utensils', type:'range', min:0, max:10, step:1, unit:'/10', note:'Geleneksel lezzetler ve restoran çeşitliliği'},
+  ]},
+  {grp:'Ekonomi & Ev Kirası', icon:'home', open:true, items:[
+    {key:'kira', label:'Ortalama ev kirası (2+1)', ic:'home', type:'range', min:8, max:45, step:1, unit:'bin ₺', lower:true, note:'Aylık tahmini ortalama konut kirası'},
+    {key:'maliyet', label:'Maliyet / pahalılık endeksi', ic:'dollar-sign', type:'range', min:0, max:10, step:1, unit:'/10', lower:true, note:'Genel mutfak ve yaşam giderleri (düşük ucuz)'},
+  ]},
+  {grp:'İklim', icon:'thermometer', open:false, items:[
     {key:'yillik_sicaklik', label:'Yıllık ort. sıcaklık', ic:'thermometer', type:'range', min:4, max:22, step:0.5, unit:'°C'},
     {key:'kis_sicaklik', label:'Kış sıcaklığı (Ocak)', ic:'thermometer', type:'range', min:-10, max:14, step:0.5, unit:'°C'},
     {key:'yaz_sicaklik', label:'Yaz sıcaklığı (Temmuz)', ic:'thermometer', type:'range', min:15, max:35, step:0.5, unit:'°C'},
@@ -70,12 +86,12 @@ const FILTERS = [
     {key:'gunes_suresi', label:'Güneş süresi', ic:'sun', type:'range', min:1500, max:4000, step:50, unit:'sa/yıl'},
     {key:'kar_yagisi', label:'Kar yağışı', ic:'cloud-rain', type:'range', min:0, max:400, step:10, unit:'cm/yıl', lower:true},
   ]},
-  {grp:'Demografi', icon:'users', open:false, items:[
+  {grp:'Demografi & Sağlık', icon:'users', open:false, items:[
     {key:'nufus', label:'Nüfus (il)', ic:'users', type:'range', min:80, max:16000, step:80, unit:'bin', log:true},
-  ]},
-  {grp:'Yaşam Kalitesi', icon:'building', open:false, items:[
-    {key:'ulasim', label:'Ulaşım / altyapı', ic:'navigation', type:'range', min:0, max:10, step:1, unit:'/10', note:'Nüfus ve bölge merkezîyetinden türetilir'},
-    {key:'internet', label:'İnternet hızı (tahmini)', ic:'wifi', type:'range', min:20, max:100, step:5, unit:'Mbps', note:'Nüfus yoğunluğundan tahmini'},
+    {key:'saglik', label:'Sağlık altyapısı', ic:'heart', type:'range', min:0, max:10, step:1, unit:'/10', note:'Hastane ve uzman hekim imkânları'},
+    {key:'egitim', label:'Eğitim imkânları', ic:'building', type:'range', min:0, max:10, step:1, unit:'/10'},
+    {key:'ulasim', label:'Ulaşım / altyapı', ic:'navigation', type:'range', min:0, max:10, step:1, unit:'/10'},
+    {key:'internet', label:'İnternet hızı (tahmini)', ic:'wifi', type:'range', min:20, max:100, step:5, unit:'Mbps'},
   ]},
   {grp:'Riskler (düşük iyi)', icon:'alert', open:false, items:[
     {key:'depremRiski', label:'Deprem riski', ic:'activity', type:'range', min:0, max:5, step:1, unit:'/5', lower:true, note:'AFAD haritasından il bazlı yaklaşıktır'},
@@ -342,8 +358,8 @@ const QUIZ_QUESTIONS = [
     options: [
       { ic: "waves", label: "Masmavi Deniz & İnce Kumlu Sahiller", set: { deniz: 1, denizMesafe: [0, 15] } },
       { ic: "mountain", label: "Yüksek Dağlar & Çam Kokulu Ormanlar", set: { rakim: [400, 2000] } },
-      { ic: "building", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10] } },
-      { ic: "compass", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500] } }
+      { ic: "building", label: "Büyükşehir Keşmekeşi & Gelişmiş İmkânlar", set: { nufus: [1000, 16000], ulasim: [8, 10], sosyalImkan: [8, 10] } },
+      { ic: "compass", label: "Sakin, Yürüyerek Gezilen Şirin Kasaba", set: { nufus: [80, 500], emeklilik: [8, 10] } }
     ]
   },
   {
@@ -356,12 +372,12 @@ const QUIZ_QUESTIONS = [
     ]
   },
   {
-    title: "3. Güvenlik ve Risk Toleransın?",
-    subtitle: "Doğal afet kaygıların senin için ne kadar belirleyici?",
+    title: "3. Sosyal Hayat ve Ev Kirası Bütçen?",
+    subtitle: "Önceliğin eğlence mi yoksa uygun yaşam gideri mi?",
     options: [
-      { ic: "shield", label: "Deprem Riski En Düşük Güvenli Bölgeler", set: { depremRiski: [0, 2] } },
-      { ic: "wind", label: "Temiz Hava & Sıfır Kirlilik (Düşük AQI)", set: { aqi: [0, 40] } },
-      { ic: "globe", label: "Fark Etmez, Manzara ve Yaşam Kalitesi Önemli", set: {} }
+      { ic: "music", label: "Gece Hayatı, Konserler & Öğrenci Şehri", set: { eglence: [7, 10], genclik: [8, 10] } },
+      { ic: "home", label: "Makul Ev Kirası & Ekonomik Yaşam", set: { kira: [8, 20] } },
+      { ic: "utensils", label: "Gastronomi & Zengin Yemek Kültürü", set: { gastro: [8, 10] } }
     ]
   }
 ];
@@ -477,7 +493,7 @@ function calculateQuizResult(){
 }
 
 /* ============================================================
-   2. 🎲 "BENİ ŞAŞIRT!" (%100 GARANTİ POPUP & PULSE VURGUSU)
+   2. 🎲 "BENİ ŞAŞIRT!"
    ============================================================ */
 document.getElementById('btnSurprise')?.addEventListener('click', ()=>{
   const validList = [...RAW.iller, ...RAW.ilceler].filter(c=> evalCity(c).eligible);
@@ -631,11 +647,11 @@ function openShareModal(city, score){
     ctx.textAlign = 'left';
 
     const stats = [
+      `Ort. Ev Kirası: ₺${city.kira ? (city.kira*1000).toLocaleString('tr-TR') : '18.000'} /ay`,
+      `Sosyal İmkânlar: ${city.sosyalImkan || 7}/10`,
+      `Gece Hayatı & Eğlence: ${city.eglence || 6}/10`,
       `Ort. Sıcaklık: ${city.yillik_sicaklik || '—'} °C`,
-      `Deniz Konumu: ${Number(city.deniz)===1 ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`,
-      `Rakım / Yükseklik: ${city.rakim || 0} m`,
-      `Canlı Hava (AQI): ${city.aqi || 25} AQI`,
-      `Canlı Nem Oranı: %${city.nem || 60}`
+      `Deniz Konumu: ${Number(city.deniz)===1 ? 'Sahil Kıyısında' : (city.denizMesafe+' km')}`
     ];
 
     stats.forEach((s, idx) => {
@@ -721,6 +737,36 @@ function renderCompareTable(){
           <td class="${res2.score>=res1.score?'winner':''}">%${res2.score}</td>
         </tr>
         <tr>
+          <td class="feature">Ort. Ev Kirası (2+1)</td>
+          <td class="${(c1.kira||20)<=(c2.kira||20)?'winner':''}">₺${((c1.kira||20)*1000).toLocaleString('tr-TR')} /ay</td>
+          <td class="${(c2.kira||20)<=(c1.kira||20)?'winner':''}">₺${((c2.kira||20)*1000).toLocaleString('tr-TR')} /ay</td>
+        </tr>
+        <tr>
+          <td class="feature">Sosyal İmkânlar</td>
+          <td class="${(c1.sosyalImkan||6)>=(c2.sosyalImkan||6)?'winner':''}">${c1.sosyalImkan||6}/10</td>
+          <td class="${(c2.sosyalImkan||6)>=(c1.sosyalImkan||6)?'winner':''}">${c2.sosyalImkan||6}/10</td>
+        </tr>
+        <tr>
+          <td class="feature">Gece Hayatı & Eğlence</td>
+          <td class="${(c1.eglence||5)>=(c2.eglence||5)?'winner':''}">${c1.eglence||5}/10</td>
+          <td class="${(c2.eglence||5)>=(c1.eglence||5)?'winner':''}">${c2.eglence||5}/10</td>
+        </tr>
+        <tr>
+          <td class="feature">Gençlik & Öğrenci Yaşamı</td>
+          <td class="${(c1.genclik||6)>=(c2.genclik||6)?'winner':''}">${c1.genclik||6}/10</td>
+          <td class="${(c2.genclik||6)>=(c1.genclik||6)?'winner':''}">${c2.genclik||6}/10</td>
+        </tr>
+        <tr>
+          <td class="feature">Gastronomi / Mutfak</td>
+          <td class="${(c1.gastro||7)>=(c2.gastro||7)?'winner':''}">${c1.gastro||7}/10</td>
+          <td class="${(c2.gastro||7)>=(c1.gastro||7)?'winner':''}">${c2.gastro||7}/10</td>
+        </tr>
+        <tr>
+          <td class="feature">Emeklilik & Huzur</td>
+          <td class="${(c1.emeklilik||6)>=(c2.emeklilik||6)?'winner':''}">${c1.emeklilik||6}/10</td>
+          <td class="${(c2.emeklilik||6)>=(c1.emeklilik||6)?'winner':''}">${c2.emeklilik||6}/10</td>
+        </tr>
+        <tr>
           <td class="feature">Yıllık Sıcaklık</td>
           <td>${c1.yillik_sicaklik || '—'} °C</td>
           <td>${c2.yillik_sicaklik || '—'} °C</td>
@@ -736,19 +782,9 @@ function renderCompareTable(){
           <td>${c2.rakim || 0} m</td>
         </tr>
         <tr>
-          <td class="feature">Yıllık Yağış</td>
-          <td>${c1.yillik_yagis || '—'} mm</td>
-          <td>${c2.yillik_yagis || '—'} mm</td>
-        </tr>
-        <tr>
           <td class="feature">Deprem Riski</td>
           <td>${c1.depremRiski || 3}/5</td>
           <td>${c2.depremRiski || 3}/5</td>
-        </tr>
-        <tr>
-          <td class="feature">İnternet Hızı</td>
-          <td>${c1.internet || 40} Mbps</td>
-          <td>${c2.internet || 40} Mbps</td>
         </tr>
       </tbody>
     </table>
@@ -782,21 +818,16 @@ async function loadData(){
   }
 }
 
-/* ---- türetilmiş değerler ---- */
+/* ---- türetilmiş değerler & 81 İL ALTYAPI ENDEKSLERİ ---- */
 const KIYI_NOKTALARI = [
-  // Karadeniz kıyısı
   [41.87,27.98],[41.63,28.08],[41.40,28.25],[41.28,28.80],[41.20,29.10],[41.18,29.61],[41.14,30.30],[41.10,30.70],
   [41.08,31.12],[41.28,31.41],[41.46,31.79],[41.64,32.34],[41.74,32.39],[41.84,32.71],[41.90,33.00],[41.97,33.76],
   [41.98,34.02],[42.02,35.15],[41.85,35.25],[41.62,35.90],[41.29,36.33],[41.20,36.70],[41.13,37.28],[41.03,37.50],
   [40.98,37.88],[40.91,38.39],[41.00,39.72],[41.02,40.52],[41.40,41.43],[41.48,41.52],
-  // İstanbul Boğazı / Marmara kuzey
   [41.24,29.12],[41.05,29.00],[40.85,29.20],[40.75,29.40],[40.76,29.93],[40.73,30.05],
-  // Marmara güney / Çanakkale
   [40.70,29.85],[40.66,29.27],[40.52,29.05],[40.42,28.70],[40.40,27.40],[40.35,26.70],[40.15,26.41],[40.02,26.30],[39.80,26.15],
-  // Ege kıyısı
   [39.55,26.65],[39.53,26.12],[39.31,26.69],[39.07,26.88],[38.85,26.85],[38.67,26.75],[38.42,27.14],[38.32,26.30],
   [38.20,26.84],[37.86,27.26],[37.65,27.35],[37.37,27.26],[37.03,27.43],[36.72,27.68],[36.85,28.27],[36.62,29.11],
-  // Akdeniz kıyısı
   [36.20,29.63],[36.24,29.98],[36.30,30.14],[36.60,30.56],[36.89,30.71],[36.78,31.44],[36.54,31.99],[36.27,32.31],
   [36.07,32.83],[36.38,33.93],[36.81,34.64],[36.57,35.37],[36.77,35.79],[36.58,36.17],[36.08,35.96],
 ];
@@ -821,6 +852,24 @@ function initDerived(){
     21:3,22:2,23:5,24:5,25:4,26:3,27:3,28:3,29:3,30:3,31:5,32:3,33:4,34:5,35:4,36:3,37:3,38:3,39:2,40:3,
     41:5,42:3,43:3,44:5,45:4,46:5,47:3,48:4,49:4,50:3,51:3,52:3,53:3,54:5,55:3,56:3,57:3,58:3,59:3,60:3,
     61:3,62:4,63:3,64:3,65:4,66:3,67:3,68:3,69:4,70:3,71:3,72:3,73:3,74:3,75:3,76:4,77:4,78:3,79:3,80:4,81:4};
+
+  // Metropol ve Özel Üniversite Şehirleri
+  const SPECIAL = {
+    34: { sosyalImkan:10, eglence:10, genclik:10, emeklilik:4, gastro:10, kira:38, maliyet:9, saglik:10, egitim:10 }, // İstanbul
+    6:  { sosyalImkan:9,  eglence:8,  genclik:9,  emeklilik:6, gastro:8,  kira:24, maliyet:8, saglik:10, egitim:10 }, // Ankara
+    35: { sosyalImkan:9,  eglence:9,  genclik:9,  emeklilik:8, gastro:9,  kira:26, maliyet:8, saglik:9,  egitim:9  }, // İzmir
+    7:  { sosyalImkan:8,  eglence:9,  genclik:9,  emeklilik:9, gastro:9,  kira:28, maliyet:8, saglik:8,  egitim:8  }, // Antalya
+    26: { sosyalImkan:9,  eglence:9,  genclik:10, emeklilik:7, gastro:7,  kira:16, maliyet:6, saglik:8,  egitim:9  }, // Eskişehir
+    48: { sosyalImkan:7,  eglence:9,  genclik:7,  emeklilik:10,gastro:8,  kira:32, maliyet:9, saglik:7,  egitim:7  }, // Muğla
+    16: { sosyalImkan:8,  eglence:7,  genclik:8,  emeklilik:7, gastro:9,  kira:20, maliyet:7, saglik:9,  egitim:8  }, // Bursa
+    27: { sosyalImkan:7,  eglence:6,  genclik:8,  emeklilik:6, gastro:10, kira:18, maliyet:7, saglik:8,  egitim:8  }, // Gaziantep
+    31: { sosyalImkan:6,  eglence:5,  genclik:7,  emeklilik:7, gastro:10, kira:15, maliyet:6, saglik:7,  egitim:7  }, // Hatay
+    1:  { sosyalImkan:7,  eglence:7,  genclik:8,  emeklilik:6, gastro:10, kira:18, maliyet:7, saglik:8,  egitim:8  }, // Adana
+    33: { sosyalImkan:7,  eglence:7,  genclik:8,  emeklilik:8, gastro:9,  kira:19, maliyet:7, saglik:8,  egitim:7  }, // Mersin
+    55: { sosyalImkan:7,  eglence:7,  genclik:8,  emeklilik:7, gastro:8,  kira:16, maliyet:6, saglik:8,  egitim:8  }, // Samsun
+    61: { sosyalImkan:6,  eglence:6,  genclik:7,  emeklilik:7, gastro:9,  kira:17, maliyet:6, saglik:8,  egitim:8  }, // Trabzon
+  };
+
   RAW.iller.forEach(c=>{
     c.depremRiski = DEPREM[c.id] || 3;
     c.daglik = c.rakim!=null ? Math.min(10, Math.round(c.rakim/200)) : null;
@@ -828,10 +877,29 @@ function initDerived(){
     if (c.deniz === 1 && c.denizMesafe > 15) c.denizMesafe = 5;
     c.deniz = Number(c.deniz !== undefined ? c.deniz : (c.denizMesafe <= 15 ? 1 : 0));
     if (c.canli) { c.nem = c.canli.nem; c.aqi = c.canli.aqi; }
+
+    const sp = SPECIAL[c.id];
+    if (sp) {
+      Object.assign(c, sp);
+    } else {
+      const isCoast = c.deniz === 1;
+      const isBig = c.nufus > 500000;
+      c.sosyalImkan = Math.min(9, Math.max(3, Math.round(Math.log10(c.nufus/1000+1)*2.2)));
+      c.eglence = Math.min(9, Math.max(2, Math.round(c.sosyalImkan * (isCoast?1.2:0.9))));
+      c.genclik = Math.min(9, Math.max(3, Math.round(c.sosyalImkan * 0.95)));
+      c.emeklilik = Math.min(10, Math.max(4, Math.round(10 - (c.nufus/2000000) + (isCoast?2:0))));
+      c.gastro = Math.min(9, Math.max(4, Math.round(5 + (c.nufus/400000))));
+      c.kira = Math.min(35, Math.max(8, Math.round(10 + (c.nufus/200000) + (isCoast?6:0))));
+      c.maliyet = Math.min(9, Math.max(3, Math.round(4 + (c.kira/6))));
+      c.saglik = Math.min(9, Math.max(3, Math.round(4 + (c.nufus/300000))));
+      c.egitim = Math.min(9, Math.max(3, Math.round(4 + (c.nufus/350000))));
+    }
+
     const nScore = Math.min(8, Math.log10(c.nufus/1000+1)*2.2);
     c.ulasim = Math.round(Math.min(10, nScore + (c.deniz?1.2:0)));
     c.internet = Math.round(Math.min(100, 25 + Math.log10(c.nufus/1000+1)*22));
   });
+
   const ilById = {};
   RAW.iller.forEach(i=> ilById[i.id]=i);
   RAW.ilceler.forEach(d=>{
@@ -842,6 +910,16 @@ function initDerived(){
     d.deniz = Number(d.deniz !== undefined ? d.deniz : (d.denizMesafe <= 15 ? 1 : 0));
     if (d.deniz === 1 && d.denizMesafe > 15) d.denizMesafe = 3;
     if (d.canli) { d.nem = d.canli.nem; d.aqi = d.canli.aqi; }
+
+    d.sosyalImkan = il.sosyalImkan || 5;
+    d.eglence = il.eglence || 4;
+    d.genclik = il.genclik || 5;
+    d.emeklilik = il.emeklilik || 7;
+    d.gastro = il.gastro || 6;
+    d.kira = Math.max(8, (il.kira || 15) - 2);
+    d.maliyet = il.maliyet || 5;
+    d.saglik = il.saglik || 5;
+    d.egitim = il.egitim || 5;
     d.ulasim = il.ulasim || 5;
     d.internet = il.internet || 40;
     d.bolge = il.bolge || '';
@@ -983,9 +1061,11 @@ function wirePresets(){
       } else if(p === 'metropolis'){
         setRangeVal('nufus', 1000, 16000);
         setRangeVal('internet', 60, 100);
+        setRangeVal('sosyalImkan', 8, 10);
       } else if(p === 'peace_safety'){
         setRangeVal('depremRiski', 0, 3);
         setRangeVal('nufus', 80, 800);
+        setRangeVal('emeklilik', 8, 10);
       }
       update();
     });
@@ -1059,7 +1139,7 @@ function evalCity(c){
 
   let activeFilters = 0;
   let totalRatio = 0;
-  let minRatio = 1.0; // Darboğaz (Bottleneck) için en düşük uyum oranı
+  let minRatio = 1.0;
   const reasons = [];
 
   FILTERS.forEach(g=>g.items.forEach(f=>{
@@ -1112,7 +1192,6 @@ function evalCity(c){
   }
 
   const avgRatio = totalRatio / activeFilters;
-  // BOTTLENECK CEZASI: En düşük kriter uyumu ortalamayı doğrudan baskılar (Suni puan yükselmesini önler)
   const weightedRatio = avgRatio * Math.pow(minRatio, 0.45);
   const score = Math.round(weightedRatio * 100);
   const eligible = (score >= 70 && minRatio >= 0.35);
@@ -1296,7 +1375,7 @@ document.getElementById('layerToggle').addEventListener('click', function(e){
 });
 
 /* ============================================================
-   POPUP
+   POPUP (KAPSAMLI ALTYAPI & SOSYAL İSTATİSTİKLER)
    ============================================================ */
 function popupHtml(c, res, type){
   const isFav = favorites.has(`${type}_${c.id}`);
@@ -1308,17 +1387,17 @@ function popupHtml(c, res, type){
   const liveBadge = live ? `<span class="fresh-badge ${live.age_h>6?'stale':''}">${iconSvg('droplet',11)} ${live.nem}% • AQI ${live.aqi} · ${live.age_h}sa önce</span>` : '';
 
   const grid = [
+    ['Ort. Kira (2+1)', c.kira? ('₺'+(c.kira*1000).toLocaleString('tr-TR')) : '—', 'home'],
+    ['Sosyal İmkân', c.sosyalImkan!=null? c.sosyalImkan+'/10' : '—', 'music'],
+    ['Gece / Eğlence', c.eglence!=null? c.eglence+'/10' : '—', 'coffee'],
+    ['Gençlik Yaşamı', c.genclik!=null? c.genclik+'/10' : '—', 'smile'],
+    ['Mutfak / Gastro', c.gastro!=null? c.gastro+'/10' : '—', 'utensils'],
+    ['Emeklilik', c.emeklilik!=null? c.emeklilik+'/10' : '—', 'sun'],
     ['Nüfus', c.nufus? fmtNum(c.nufus,'bin') : '—', 'users'],
-    ['Rakım', c.rakim!=null? c.rakim+' m' : '—', 'mountain'],
-    ['Deniz', Number(c.deniz)===1? 'Evet' : 'Hayır', 'waves'],
-    ['Denize uzk.', c.denizMesafe!=null? (c.denizMesafe+' km') : '—', 'waves'],
+    ['Deniz Konumu', Number(c.deniz)===1? 'Evet (Sahil)' : (c.denizMesafe+' km'), 'waves'],
     ['Yıllık sıc.', c.yillik_sicaklik!=null? c.yillik_sicaklik+' °C' : '—', 'thermometer'],
     ['Kış / Yaz', (c.kis_sicaklik!=null?c.kis_sicaklik:'?')+'° / '+(c.yaz_sicaklik!=null?c.yaz_sicaklik+'°':'?'), 'thermometer'],
-    ['Yağış', c.yillik_yagis!=null? c.yillik_yagis+' mm' : '—', 'cloud-rain'],
-    ['Güneş', c.gunes_suresi!=null? c.gunes_suresi+' sa/yıl' : '—', 'sun'],
-    ['Kar', c.kar_yagisi!=null? c.kar_yagisi+' cm/yıl' : '—', 'cloud-rain'],
-    ['Ulaşım', c.ulasim!=null? c.ulasim+'/10' : '—', 'navigation'],
-    ['İnternet', c.internet!=null? c.internet+' Mbps' : '—', 'wifi'],
+    ['Sağlık', c.saglik!=null? c.saglik+'/10' : '—', 'heart'],
     ['Deprem', c.depremRiski!=null? c.depremRiski+'/5' : '—', 'activity'],
   ].map(r=>`<div><span class="k">${iconSvg(r[2],12)} ${r[0]}</span><b>${r[1]}</b></div>`).join('');
 
