@@ -1438,7 +1438,6 @@ function popupHtml(c, res, type){
         <button class="pop-btn fav ${isFav?'active':''}" onclick="window.appToggleFav(${c.id}, '${type}')" title="Favorilere Ekle/Çıkar">${iconSvg('heart',13)}</button>
         <button class="pop-btn cmp" onclick="window.appStartMapCompare(${c.id}, '${type}')" title="Bu Şehri Karşılaştır">${iconSvg('activity',13)} ⚖️</button>
         <button class="pop-btn share" onclick="window.appCopyLink('${c.ad}')" title="Davet Bağlantısını Kopyala">${iconSvg('link',13)} Link</button>
-        <button class="pop-btn share" onclick="window.appShareCity(${c.id}, '${type}')" title="Instagram Story Kartı Oluştur">${iconSvg('globe',13)} 📸</button>
       </div>
     </h3>
     <div class="region">${altBaslik}</div>
