@@ -1399,7 +1399,7 @@ function popupHtml(c, res, type){
     ['Kış / Yaz', (c.kis_sicaklik!=null?c.kis_sicaklik:'?')+'° / '+(c.yaz_sicaklik!=null?c.yaz_sicaklik+'°':'?'), 'thermometer'],
     ['Sağlık', c.saglik!=null? c.saglik+'/10' : '—', 'heart'],
     ['Deprem', c.depremRiski!=null? c.depremRiski+'/5' : '—', 'activity'],
-  ].map(r=>`<div><span class="k">${iconSvg(r[2],12)} ${r[0]}</span><b>${r[1]}</b></div>`).join('');
+  ].map(r=>`<div><span class="k">${iconSvg(r[2],13)} ${r[0]}</span><b>${r[1]}</b></div>`).join('');
 
   return `<div class="pop">
     <h3>
