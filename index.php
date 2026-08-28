@@ -1,5 +1,8 @@
 <?php
 require __DIR__ . '/lib/icons.php';
+// Cache-busting: dosya değişince version bump olur (her istekte değil).
+$cssV = filemtime(__DIR__ . '/assets/style.css');
+$jsV  = filemtime(__DIR__ . '/assets/app.js');
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -11,7 +14,7 @@ require __DIR__ . '/lib/icons.php';
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Canvas Konfeti efekti -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
-<link rel="stylesheet" href="assets/style.css?v=<?= time() ?>"/>
+<link rel="stylesheet" href="assets/style.css?v=<?= $cssV ?>"/>
 
 <!-- Google AdSense Yayıncı Kodu -->
 <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
@@ -286,6 +289,6 @@ require __DIR__ . '/lib/icons.php';
   </div>
 </div>
 
-<script src="assets/app.js?v=<?= time() ?>"></script>
+<script src="assets/app.js?v=<?= $jsV ?>"></script>
 </body>
 </html>

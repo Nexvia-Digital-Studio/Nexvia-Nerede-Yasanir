@@ -1,0 +1,35 @@
+# =====================================================================
+# YAŞAM HARİTASI — .htaccess (güvenlik + indeksleme)
+# NexviaCP / Apache (Hestia) uyumlu. XAMPP'ta da zararsız çalışır.
+# =====================================================================
+
+# 1) Dizin indeksi — index.php her zaman öncelikli (index.html çakışmasını önler)
+<IfModule mod_dir.c>
+    DirectoryIndex index.php index.html
+</IfModule>
+
+# 2) Dizin listelemeyi kapat
+Options -Indexes
+
+# 3) Hassas klasörler — web'den direkt erişimi engelle (mod_rewrite ile güçlü koruma)
+#    lib/   → db.php (DB şifreleri), icons.php
+#    build/ → seed_*.php (veri silebilen script'ler), schema.sql (indirilebilir)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(?:lib|build)(/.*)?$ - [F,L]
+</IfModule>
+# Fallback: mod_alias (RewriteEngine yoksa)
+RedirectMatch 403 ^/(?:lib|build)(/.*)?$
+
+# 4) Hassas dosyalar — config (gerçek + örnek), sql, md, dotfiles
+#    config.local.example.php örnek DB şifresi içerir — erişilemez olmalı.
+<FilesMatch "(^\.|config\.local(\.example)?\.php|\.sql$|\.md$|composer\.(json|lock)|package(-lock)?\.json)">
+    Require all denied
+</FilesMatch>
+
+# 5) Güvenlik başlıkları
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
