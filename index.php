@@ -237,30 +237,62 @@ $jsV  = filemtime(__DIR__ . '/assets/app.js');
   </div>
 </div>
 
-<!-- 👨‍💻 NEXVİA DİGİTAL STUDİO & BATUHAN AKCAN MODALI -->
+<!-- 👨‍💻 NEXVİA DİGİTAL STUDİO MODALI -->
 <div class="about-backdrop" id="aboutBackdrop">
-  <div class="about-card">
+  <div class="about-card" style="max-width: 620px; max-height: 90vh; overflow-y: auto;">
     <button class="about-close" id="aboutClose" onclick="document.getElementById('aboutBackdrop').classList.remove('show')">&times;</button>
     <div class="about-avatar">
       <?= icon('zap', 24) ?>
     </div>
     <h2>Nexvia Digital Studio</h2>
-    <div class="about-badge">⚡ Batuhan Akcan & Gönüllü Proje</div>
-    <p class="about-text">
-      Merhaba! Ben <b>Batuhan Akcan</b>. Yaşam Haritası projesini <b>Nexvia Digital Studio</b> bünyesinde tamamen <b>gönüllü ve açık kaynaklı</b> olarak geliştirdim. Amacımız, Türkiye'de yaşamak için iklimi, deniz mesafesi, rakımı, canlı nem/hava kalitesi ve altyapısı kendi yaşam tarzına en çok uyan şehir ve ilçeleri herkesin kolayca keşfedebilmesidir.
+    <div class="about-badge">⚡ Geleceğin Dijital Çözümleri</div>
+    <p class="about-text" style="line-height:1.7; font-size:13.5px; margin-bottom:16px;">
+      <strong>Nexvia Digital Studio</strong>; web tasarımdan mobil uygulamaya, SEO’dan özel yazılıma ve SaaS ekosistemlerine kadar markaların tüm dijital varlığını tek çatı altında inşa eden butik bir teknoloji stüdyosudur. Yaşam Haritası da stüdyomuz tarafından geliştirilen açık veri platformudur.
     </p>
-    <div class="social-links">
-      <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="social-btn web">
-        <?= icon('globe', 16) ?> Web Sitemiz: nexviastudio.com
+
+    <!-- Ekosistem Markaları (Yaşam Haritası HARİÇ) -->
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:16px; text-align:left;">
+      <div style="font-size:11px; font-weight:800; color:var(--accent2); text-transform:uppercase; margin-bottom:8px; letter-spacing:0.5px;">Nexvia Ekosistemi &amp; Markaları</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
+        <div style="background:var(--panel); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
+          <strong style="display:block; color:var(--txt); font-size:12px;">Mercan Adisyon</strong>
+          <span style="color:var(--muted); font-size:10.5px;">Restoran POS &amp; Dijital QR Menü</span>
+        </div>
+        <div style="background:var(--panel); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
+          <strong style="display:block; color:var(--txt); font-size:12px;">Anılarım Güvende</strong>
+          <span style="color:var(--muted); font-size:10.5px;">Düğün &amp; Canlı Slayt QR Platformu</span>
+        </div>
+        <div style="background:var(--panel); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
+          <strong style="display:block; color:var(--txt); font-size:12px;">Nexvia Storeline</strong>
+          <span style="color:var(--muted); font-size:10.5px;">Yeni Nesil E-Ticaret Altyapısı</span>
+        </div>
+        <div style="background:var(--panel); padding:8px 10px; border-radius:8px; border:1px solid var(--border);">
+          <strong style="display:block; color:var(--txt); font-size:12px;">Nexvia One &amp; SteelCore</strong>
+          <span style="color:var(--muted); font-size:10.5px;">Fabrika Stok &amp; Modüler ERP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hizmetler -->
+    <div style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin-bottom:16px;">
+      <span style="font-size:11px; background:var(--panel2); padding:3px 9px; border-radius:12px; color:var(--txt); font-weight:600;">Web Tasarım</span>
+      <span style="font-size:11px; background:var(--panel2); padding:3px 9px; border-radius:12px; color:var(--txt); font-weight:600;">Özel Yazılım</span>
+      <span style="font-size:11px; background:var(--panel2); padding:3px 9px; border-radius:12px; color:var(--txt); font-weight:600;">Mobil Uygulama</span>
+      <span style="font-size:11px; background:var(--panel2); padding:3px 9px; border-radius:12px; color:var(--txt); font-weight:600;">SEO &amp; Pazarlama</span>
+      <span style="font-size:11px; background:var(--panel2); padding:3px 9px; border-radius:12px; color:var(--txt); font-weight:600;">Marka Kimliği</span>
+    </div>
+
+    <div class="social-links" style="gap:8px;">
+      <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="social-btn web" style="font-size:12px; padding:8px 12px;">
+        <?= icon('globe', 15) ?> nexviastudio.com Resmi Sitemiz
       </a>
-      <a href="https://github.com/Nexvia-Digital-Studio" target="_blank" rel="noopener" class="social-btn github">
-        <?= icon('briefcase', 16) ?> GitHub: Nexvia Digital Studio
+      <a href="https://wa.me/905313116892?text=Merhaba%2C%20Nexvia%20Digital%20Studio%20hizmetleri%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener" class="social-btn" style="background:#25D366; color:#fff; border-color:#25D366; font-size:12px; padding:8px 12px;">
+        WhatsApp'tan Yazın
       </a>
-      <a href="https://instagram.com/batuhann_akcan" target="_blank" rel="noopener" class="social-btn insta">
-        <?= icon('users', 16) ?> Instagram: @batuhann_akcan
+      <a href="mailto:info@nexviastudio.com" class="social-btn github" style="font-size:12px; padding:8px 12px;">
+        <?= icon('mail', 15) ?> info@nexviastudio.com
       </a>
     </div>
-    <div class="about-footer-text">Projelerimiz ve iş birlikleri için nexviastudio.com üzerinden ulaşabilirsiniz.</div>
   </div>
 </div>
 
