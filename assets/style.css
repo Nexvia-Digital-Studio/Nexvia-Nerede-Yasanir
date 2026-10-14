@@ -285,6 +285,11 @@ body.light-theme .ic-moon{display:none;}
   padding:12px 14px; font-size:12px; text-align:center; color:var(--muted);
   border-top:1px solid var(--border); background:var(--panel); flex-shrink:0;
 }
+.sb-footer .sb-imza { display:flex; justify-content:center; margin-top:8px; }
+.sb-footer .sb-imza img { height:34px; width:auto; }
+.sb-footer .logo-for-light { display:none; }
+body.light-theme .sb-footer .logo-for-dark { display:none; }
+body.light-theme .sb-footer .logo-for-light { display:block; }
 
 /* Davet Bildirim Bandı */
 .invite-banner {

@@ -113,7 +113,11 @@ $jsV  = filemtime(__DIR__ . '/assets/app.js');
     </div>
 
     <div class="sb-footer">
-      <span>Geliştirici: <b>Batuhan Akcan</b> · <?= icon('zap', 12) ?> <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" style="color:var(--accent2);font-weight:700;text-decoration:none;">Nexvia Digital Studio</a></span>
+      <span>Geliştirici: <b>Batuhan Akcan</b></span>
+      <a href="https://www.nexviastudio.com/" target="_blank" rel="noopener" class="sb-imza" aria-label="Nexvia Digital Studio">
+        <img class="logo-for-dark" src="assets/nexvia-digital-studio-light.png" alt="Nexvia Digital Studio" width="120" height="40" loading="lazy">
+        <img class="logo-for-light" src="assets/nexvia-digital-studio-dark.png" alt="" aria-hidden="true" width="120" height="43" loading="lazy">
+      </a>
     </div>
   </aside>
 
